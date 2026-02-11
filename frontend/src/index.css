@@ -1,0 +1,82 @@
+:root {
+  --nb-primary: #883aea;
+  --nb-secondary: #29ffa6;
+  --nb-accent: #ff5e5e;
+  --nb-bg: #e0e0e0;
+  --nb-card-bg: #ffffff;
+  --nb-border: #000000;
+  --nb-text: #000000;
+  --nb-shadow: 4px 4px 0px 0px #000000;
+  --font-heading: "Archivo Black", sans-serif;
+  --font-body: "Public Sans", sans-serif;
+  --font-retro: "Press Start 2P", system-ui;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: var(--font-body);
+  background-color: var(--nb-bg);
+  color: var(--nb-text);
+  min-height: 100vh;
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  font-family: var(--font-retro);
+  text-transform: uppercase;
+  margin-top: 0;
+  line-height: 1.4;
+}
+
+button {
+  font-family: var(--font-heading);
+  background-color: var(--nb-primary);
+  color: white;
+  border: 3px solid var(--nb-border);
+  box-shadow: var(--nb-shadow);
+  padding: 10px 20px;
+  font-size: 1.2rem;
+  cursor: pointer;
+  transition: all 0.1s ease;
+  text-transform: uppercase;
+}
+
+button:hover {
+  transform: translate(-2px, -2px);
+  box-shadow: 6px 6px 0px 0px var(--nb-border);
+}
+
+button:active {
+  transform: translate(2px, 2px);
+  box-shadow: 2px 2px 0px 0px var(--nb-border);
+}
+
+.card {
+  background-color: var(--nb-card-bg);
+  border: 3px solid var(--nb-border);
+  box-shadow: var(--nb-shadow);
+  padding: 2rem;
+  margin: 1rem;
+}
+
+.input {
+  border: 3px solid var(--nb-border);
+  box-shadow: var(--nb-shadow);
+  padding: 10px;
+  font-family: var(--font-body);
+  font-weight: bold;
+  font-size: 1rem;
+  outline: none;
+}
+
+.input:focus {
+  background-color: #feffd6;
+}
