@@ -1,82 +1,123 @@
+@import url("https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap");
+@import "tailwindcss";
+
+@plugin "tailwindcss-animate";
+@plugin "@tailwindcss/typography";
+
+@custom-variant dark (&:is(.dark *));
+
 :root {
-  --nb-primary: #883aea;
-  --nb-secondary: #29ffa6;
-  --nb-accent: #ff5e5e;
-  --nb-bg: #e0e0e0;
-  --nb-card-bg: #ffffff;
-  --nb-border: #000000;
-  --nb-text: #000000;
-  --nb-shadow: 4px 4px 0px 0px #000000;
-  --font-heading: "Archivo Black", sans-serif;
-  --font-body: "Public Sans", sans-serif;
-  --font-retro: "Press Start 2P", system-ui;
+  --border-radius: 5px;
+  --box-shadow-x: 4px;
+  --box-shadow-y: 4px;
+  --reverse-box-shadow-x: -4px;
+  --reverse-box-shadow-y: -4px;
+
+  --heading-font-weight: 700;
+  --base-font-weight: 500;
+
+  --background: oklch(93.46% 0.0304 254.32);
+  --secondary-background: oklch(100% 0 0);
+  --foreground: oklch(0% 0 0);
+  --main-foreground: oklch(0% 0 0);
+
+  --main: oklch(67.47% 0.1725 259.61);
+  --border: oklch(0% 0 0);
+  --ring: oklch(0% 0 0);
+  --overlay: oklch(0% 0 0 / 0.8);
+
+  --shadow: var(--box-shadow-x) var(--box-shadow-y) 0px 0px var(--border);
+
+  --chart-1: oklch(67.47% 0.1726 259.49);
+  --chart-2: oklch(67.28% 0.2147 24.22);
+  --chart-3: oklch(86.03% 0.176 92.36);
+  --chart-4: oklch(79.76% 0.2044 153.08);
+  --chart-5: oklch(66.34% 0.1806 277.2);
+  --chart-active-dot: #000;
 }
 
-* {
-  box-sizing: border-box;
+.dark {
+  --background: oklch(29.12% 0.0633 270.86);
+  --secondary-background: oklch(23.93% 0 0);
+  --foreground: oklch(92.49% 0 0);
+  --main-foreground: oklch(0% 0 0);
+
+  --border: oklch(0% 0 0);
+  --ring: oklch(100% 0 0);
+
+  --shadow: var(--box-shadow-x) var(--box-shadow-y) 0px 0px var(--border);
+
+  --chart-active-dot: #fff;
 }
 
-body {
-  margin: 0;
-  font-family: var(--font-body);
-  background-color: var(--nb-bg);
-  color: var(--nb-text);
-  min-height: 100vh;
+@theme inline {
+  --color-main: var(--main);
+  --color-background: var(--background);
+  --color-secondary-background: var(--secondary-background);
+  --color-foreground: var(--foreground);
+  --color-main-foreground: var(--main-foreground);
+  --color-border: var(--border);
+  --color-overlay: var(--overlay);
+  --color-ring: var(--ring);
+
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+
+  --spacing-boxShadowX: var(--box-shadow-x);
+  --spacing-boxShadowY: var(--box-shadow-y);
+  --spacing-reverseBoxShadowX: var(--reverse-box-shadow-x);
+  --spacing-reverseBoxShadowY: var(--reverse-box-shadow-y);
+
+  --radius-base: var(--border-radius);
+
+  --shadow-shadow: var(--shadow);
+  --shadow-nav: 4px 4px 0px 0px var(--border);
+  --shadow-darkNav: 4px 4px 0px 0px var(--dark-border);
+
+  --font-weight-base: var(--base-font-weight);
+  --font-weight-heading: var(--heading-font-weight);
+
+  --animate-marquee: marquee 5s linear infinite;
+  --animate-marquee2: marquee2 5s linear infinite;
+
+  --spacing-container: 1300px;
+
+  @keyframes marquee {
+    0% {
+      transform: translateX(0%);
+    }
+    100% {
+      transform: translateX(-100%);
+    }
+  }
+
+  @keyframes marquee2 {
+    0% {
+      transform: translateX(100%);
+    }
+    100% {
+      transform: translateX(0%);
+    }
+  }
+
+  --font-base: "Press Start 2P", system-ui, sans-serif;
+  --font-heading: "Press Start 2P", system-ui, sans-serif;
 }
 
-h1,
-h2,
-h3,
-h4,
-h5,
-h6 {
-  font-family: var(--font-retro);
-  text-transform: uppercase;
-  margin-top: 0;
-  line-height: 1.4;
-}
+@layer base {
+  body {
+    @apply text-foreground font-base;
+  }
 
-button {
-  font-family: var(--font-heading);
-  background-color: var(--nb-primary);
-  color: white;
-  border: 3px solid var(--nb-border);
-  box-shadow: var(--nb-shadow);
-  padding: 10px 20px;
-  font-size: 1.2rem;
-  cursor: pointer;
-  transition: all 0.1s ease;
-  text-transform: uppercase;
-}
-
-button:hover {
-  transform: translate(-2px, -2px);
-  box-shadow: 6px 6px 0px 0px var(--nb-border);
-}
-
-button:active {
-  transform: translate(2px, 2px);
-  box-shadow: 2px 2px 0px 0px var(--nb-border);
-}
-
-.card {
-  background-color: var(--nb-card-bg);
-  border: 3px solid var(--nb-border);
-  box-shadow: var(--nb-shadow);
-  padding: 2rem;
-  margin: 1rem;
-}
-
-.input {
-  border: 3px solid var(--nb-border);
-  box-shadow: var(--nb-shadow);
-  padding: 10px;
-  font-family: var(--font-body);
-  font-weight: bold;
-  font-size: 1rem;
-  outline: none;
-}
-
-.input:focus {
-  background-color: #feffd6;
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    @apply font-heading;
+  }
 }

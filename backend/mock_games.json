@@ -1,0 +1,262 @@
+[
+    {
+        "id": "1",
+        "game_name": "Super Mario Odyssey",
+        "videogame": "Nintendo Switch",
+        "rating": 4.8,
+        "developer": "Nintendo EPD",
+        "publisher": "Nintendo",
+        "release_date": "2017-10-27",
+        "region": "WLD",
+        "genre": "Platformer",
+        "gameplay_modes": "Single-player, Multiplayer",
+        "filename": "super_mario_odyssey.nsp",
+        "size": "5.6GB",
+        "upload_date": "2023-01-10",
+        "description": "Join Mario on a massive, globe-trotting 3D adventure!",
+        "images": [
+            "https://example.com/mario.jpg"
+        ],
+        "videos": null
+    },
+    {
+        "id": "2",
+        "game_name": "The Legend of Zelda: Breath of the Wild",
+        "videogame": "Nintendo Switch",
+        "rating": 4.9,
+        "developer": "Nintendo EPD",
+        "publisher": "Nintendo",
+        "release_date": "2017-03-03",
+        "region": "WLD",
+        "genre": "Action-adventure",
+        "gameplay_modes": "Single-player",
+        "filename": "zelda_botw.nsp",
+        "size": "13.4GB",
+        "upload_date": "2023-01-11",
+        "description": "Step into a world of discovery, exploration, and adventure.",
+        "images": [
+            "https://m.media-amazon.com/images/M/MV5BNjI0NTEwZDYtZDhlOC00MGM2LWFlNGItY2U2ZWRkMzk2ODI0XkEyXkFqcGc@._V1_FMjpg_UX1000_.jpg"
+        ],
+        "videos": null
+    },
+    {
+        "id": "2b",
+        "game_name": "The Legend of Zelda: Breath of the Wild",
+        "videogame": "Nintendo Switch",
+        "rating": 4.9,
+        "developer": "Nintendo EPD",
+        "publisher": "Nintendo",
+        "release_date": "2017-03-03",
+        "region": "USA",
+        "genre": "Action-adventure",
+        "gameplay_modes": "Single-player",
+        "filename": "zelda_botw_usa.nsp",
+        "size": "13.4GB",
+        "upload_date": "2023-01-11",
+        "description": "Step into a world of discovery, exploration, and adventure.",
+        "images": [
+            "https://m.media-amazon.com/images/M/MV5BNjI0NTEwZDYtZDhlOC00MGM2LWFlNGItY2U2ZWRkMzk2ODI0XkEyXkFqcGc@._V1_FMjpg_UX1000_.jpg"
+        ],
+        "videos": null
+    },
+    {
+        "id": "2c",
+        "game_name": "The Legend of Zelda: Breath of the Wild",
+        "videogame": "Nintendo Switch",
+        "rating": 4.9,
+        "developer": "Nintendo EPD",
+        "publisher": "Nintendo",
+        "release_date": "2017-03-03",
+        "region": "EUR",
+        "genre": "Action-adventure",
+        "gameplay_modes": "Single-player",
+        "filename": "zelda_botw_eur.nsp",
+        "size": "13.4GB",
+        "upload_date": "2023-01-11",
+        "description": "Step into a world of discovery, exploration, and adventure.",
+        "images": [
+            "https://m.media-amazon.com/images/M/MV5BNjI0NTEwZDYtZDhlOC00MGM2LWFlNGItY2U2ZWRkMzk2ODI0XkEyXkFqcGc@._V1_FMjpg_UX1000_.jpg"
+        ],
+        "videos": null
+    },
+    {
+        "id": "2d",
+        "game_name": "The Legend of Zelda: Breath of the Wild",
+        "videogame": "Nintendo Switch",
+        "rating": 4.5,
+        "developer": "Nintendo EPD",
+        "publisher": "Nintendo",
+        "release_date": "2016-06-15",
+        "region": "Beta",
+        "genre": "Action-adventure",
+        "gameplay_modes": "Single-player",
+        "filename": "zelda_botw_beta.nsp",
+        "size": "10.0GB",
+        "upload_date": "2023-01-01",
+        "description": "Beta version of BOTW.",
+        "images": [
+            "https://m.media-amazon.com/images/M/MV5BNjI0NTEwZDYtZDhlOC00MGM2LWFlNGItY2U2ZWRkMzk2ODI0XkEyXkFqcGc@._V1_FMjpg_UX1000_.jpg"
+        ],
+        "videos": null
+    },
+    {
+        "id": "3",
+        "game_name": "Elden Ring",
+        "videogame": "PC",
+        "rating": 4.9,
+        "developer": "FromSoftware",
+        "publisher": "Bandai Namco",
+        "release_date": "2022-02-25",
+        "region": "WLD",
+        "genre": "Action RPG",
+        "gameplay_modes": "Single-player, Multiplayer",
+        "filename": "elden_ring.iso",
+        "size": "45GB",
+        "upload_date": "2023-02-01",
+        "description": "The Golden Order has been broken.",
+        "images": [
+            "https://example.com/eldenring.jpg"
+        ],
+        "videos": null
+    },
+    {
+        "id": "4",
+        "game_name": "God of War Ragnarök",
+        "videogame": "PlayStation 5",
+        "rating": 4.9,
+        "developer": "Santa Monica Studio",
+        "publisher": "Sony Interactive Entertainment",
+        "release_date": "2022-11-09",
+        "region": "WLD",
+        "genre": "Action-adventure",
+        "gameplay_modes": "Single-player",
+        "filename": "gow_ragnarok.pkg",
+        "size": "84GB",
+        "upload_date": "2023-03-15",
+        "description": "Fimbulwinter is well underway.",
+        "images": [
+            "https://example.com/gowr.jpg"
+        ],
+        "videos": null
+    },
+    {
+        "id": "5",
+        "game_name": "Hollow Knight",
+        "videogame": "PC",
+        "rating": 4.8,
+        "developer": "Team Cherry",
+        "publisher": "Team Cherry",
+        "release_date": "2017-02-24",
+        "region": "WLD",
+        "genre": "Metroidvania",
+        "gameplay_modes": "Single-player",
+        "filename": "hollow_knight.zip",
+        "size": "9GB",
+        "upload_date": "2023-04-20",
+        "description": "Forge your own path in Hollow Knight!",
+        "images": [
+            "https://example.com/hollowknight.jpg"
+        ],
+        "videos": null
+    },
+    {
+        "id": "6",
+        "game_name": "Red Dead Redemption 2",
+        "videogame": "PlayStation 4",
+        "rating": 4.8,
+        "developer": "Rockstar Studios",
+        "publisher": "Rockstar Games",
+        "release_date": "2018-10-26",
+        "region": "WLD",
+        "genre": "Action-adventure",
+        "gameplay_modes": "Single-player, Multiplayer",
+        "filename": "rdr2.pkg",
+        "size": "105GB",
+        "upload_date": "2023-05-30",
+        "description": "America, 1899.",
+        "images": [
+            "https://example.com/rdr2.jpg"
+        ],
+        "videos": null
+    },
+    {
+        "id": "7",
+        "game_name": "Minecraft",
+        "videogame": "PC",
+        "rating": 4.7,
+        "developer": "Mojang Studios",
+        "publisher": "Mojang Studios",
+        "release_date": "2011-11-18",
+        "region": "WLD",
+        "genre": "Sandbox",
+        "gameplay_modes": "Single-player, Multiplayer",
+        "filename": "minecraft.exe",
+        "size": "1GB",
+        "upload_date": "2023-06-10",
+        "description": "Prepare for an adventure of limitless possibilities.",
+        "images": [
+            "https://example.com/minecraft.jpg"
+        ],
+        "videos": null
+    },
+    {
+        "id": "8",
+        "game_name": "Grand Theft Auto V",
+        "videogame": "PlayStation 5",
+        "rating": 4.7,
+        "developer": "Rockstar North",
+        "publisher": "Rockstar Games",
+        "release_date": "2013-09-17",
+        "region": "WLD",
+        "genre": "Action-adventure",
+        "gameplay_modes": "Single-player, Multiplayer",
+        "filename": "gtav.pkg",
+        "size": "110GB",
+        "upload_date": "2023-08-05",
+        "description": "Experience the ultimate open world experience.",
+        "images": [
+            "https://m.media-amazon.com/images/M/MV5BOGI2Yjk1ZTEtZTA2Yy00ZjQ3LTk4MTgtYTgyMGQ1Zjk3YjgzXkEyXkFqcGc@._V1_FMjpg_UX1000_.jpg"
+        ],
+        "videos": null
+    },
+    {
+        "id": "9",
+        "game_name": "The Witcher 3: Wild Hunt",
+        "videogame": "Xbox One",
+        "rating": 4.9,
+        "developer": "CD Projekt Red",
+        "publisher": "CD Projekt",
+        "release_date": "2015-05-19",
+        "region": "WLD",
+        "genre": "Action RPG",
+        "gameplay_modes": "Single-player",
+        "filename": "witcher3.iso",
+        "size": "50GB",
+        "upload_date": "2023-09-10",
+        "description": "You are Geralt of Rivia, mercenary monster slayer.",
+        "images": [
+            "https://cdn.mobygames.com/covers/1495173-the-witcher-3-wild-hunt-xbox-one-front-cover.png"
+        ],
+        "videos": null
+    },
+    {
+        "id": "10",
+        "game_name": "Cyberpunk 2077",
+        "videogame": "PC",
+        "rating": 4.2,
+        "developer": "CD Projekt Red",
+        "publisher": "CD Projekt",
+        "release_date": "2020-12-10",
+        "region": "WLD",
+        "genre": "Action RPG",
+        "gameplay_modes": "Single-player",
+        "filename": "cyberpunk2077.zip",
+        "size": "70GB",
+        "upload_date": "2023-10-01",
+        "description": "Cyberpunk 2077 is an open-world, action-adventure RPG.",
+        "images": [
+            "https://example.com/cyberpunk.jpg"
+        ],
+        "videos": null
+    }
+]
