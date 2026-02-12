@@ -3,6 +3,9 @@ require("dotenv").config();
 const mockGames = require("./data/mock_games.json");
 const recommendedEmus = require("./data/recommended_emus.json");
 
+const twitch_client_id = process.env.TWITCH_CLIENT_ID;
+const twitch_client_secret = process.env.TWITCH_CLIENT_SECRET;
+
 const app = express();
 const PORT = 3000;
 
