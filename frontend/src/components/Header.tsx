@@ -62,9 +62,9 @@ export function Header({ appName }: HeaderProps) {
               </Link>
             </li>
             <li>
-              <a href="#" className="hover:underline hover:decoration-2">
+              <Link to="/about" className="hover:underline hover:decoration-2">
                 About
-              </a>
+              </Link>
             </li>
           </ul>
         </nav>
