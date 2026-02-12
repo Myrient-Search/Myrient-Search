@@ -173,10 +173,19 @@ async function scrapeMyrient() {
   while (queue.length > 0 && scrapedGames.length < LIMIT) {
     const currentUrl = queue.shift();
 
-    // Normalize URL
-    const normalizedUrl = currentUrl.endsWith("/")
-      ? currentUrl.slice(0, -1)
-      : currentUrl;
+    const [urlProto, urlHost] = currentUrl.split("://");
+    const urlHostParts = urlHost.split("/").filter(entry => entry != '');;
+    while(urlHostParts.at(-1) == '.' || urlHostParts.at(-1) == '..'){
+      if(urlHostParts.at(-1) == '..'){
+        urlHostParts.pop();
+        urlHostParts.pop();
+      }
+      else{
+        urlHostParts.pop();
+      }
+    }
+    const normalizedUrl = `${urlProto}://${urlHostParts.join("/")}`;
+
     if (visited.has(normalizedUrl)) continue;
     visited.add(normalizedUrl);
     visited.add(currentUrl);
