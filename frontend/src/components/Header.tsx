@@ -1,4 +1,5 @@
 import { Globe } from "lucide-react";
+import { Link } from "react-router-dom";
 import { useState, useEffect } from "react";
 import figlet from "figlet";
 import small from "figlet/importable-fonts/Small.js";
@@ -37,9 +38,14 @@ export function Header({ appName }: HeaderProps) {
     <header className="absolute top-0 left-0 z-10 flex w-full items-start justify-between p-4 md:p-6">
       <div className="flex flex-row items-center gap-6">
         {/* Header ASCII Logo */}
-        <pre className="text-[0.4rem] leading-[0.5rem] font-mono text-white whitespace-pre select-none hidden md:block">
-          {headerLogo}
-        </pre>
+        <Link
+          to="/"
+          className="hidden md:block hover:opacity-80 transition-opacity"
+        >
+          <pre className="text-[0.4rem] leading-[0.5rem] font-mono text-white whitespace-pre select-none">
+            {headerLogo}
+          </pre>
+        </Link>
         <nav>
           <ul className="flex gap-4 text-[10px] md:text-xs text-white">
             <li>
@@ -48,9 +54,12 @@ export function Header({ appName }: HeaderProps) {
               </a>
             </li>
             <li>
-              <a href="#" className="hover:underline hover:decoration-2">
+              <Link
+                to="/emulators"
+                className="hover:underline hover:decoration-2"
+              >
                 Emulators
-              </a>
+              </Link>
             </li>
             <li>
               <a href="#" className="hover:underline hover:decoration-2">

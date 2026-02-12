@@ -45,10 +45,7 @@ export function GameCard({ games }: GameCardProps) {
         )}
 
         {/* Main Card */}
-        <motion.div
-          layoutId={`card-${mainGame.id}`}
-          className="relative flex w-full flex-col overflow-hidden rounded-md border-4 border-black bg-zinc-800 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] transition-transform hover:-translate-y-1 hover:shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] z-10"
-        >
+        <div className="relative flex w-full flex-col overflow-hidden rounded-md border-4 border-black bg-zinc-800 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] transition-transform hover:-translate-y-1 hover:shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] z-10">
           <div className="aspect-[2/3] w-full overflow-hidden bg-zinc-900">
             <img
               src={image}
@@ -71,7 +68,7 @@ export function GameCard({ games }: GameCardProps) {
               )}
             </div>
           </div>
-        </motion.div>
+        </div>
       </div>
 
       <AnimatePresence>
@@ -81,7 +78,8 @@ export function GameCard({ games }: GameCardProps) {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              className="absolute inset-0 bg-black/80 backdrop-blur-sm"
+              transition={{ duration: 0.2 }}
+              className="absolute inset-0 bg-black/50"
               onClick={(e) => {
                 e.stopPropagation();
                 setIsOpen(false);

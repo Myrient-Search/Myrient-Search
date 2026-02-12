@@ -1,6 +1,7 @@
 const express = require("express");
 require("dotenv").config();
-const mockGames = require("./mock_games.json");
+const mockGames = require("./data/mock_games.json");
+const recommendedEmus = require("./data/recommended_emus.json");
 
 const app = express();
 const PORT = 3000;
@@ -27,6 +28,31 @@ app.get("/search", (req, res) => {
     limit: limit,
     total_pages: Math.ceil(filtered.length / limit),
   });
+});
+
+app.get("/emulators", (req, res) => {
+  res.json(recommendedEmus);
+});
+
+app.get("/proxy-assets", async (req, res) => {
+  const { url } = req.query;
+  if (!url) return res.status(400).send("No URL provided");
+
+  try {
+    const response = await fetch(url);
+    if (!response.ok)
+      throw new Error(`Failed to fetch: ${response.statusText}`);
+
+    const contentType = response.headers.get("content-type");
+    if (contentType) res.setHeader("Content-Type", contentType);
+
+    const arrayBuffer = await response.arrayBuffer();
+    const buffer = Buffer.from(arrayBuffer);
+    res.send(buffer);
+  } catch (err) {
+    console.error("Proxy error:", err);
+    res.status(500).send("Error fetching asset");
+  }
 });
 
 app.get("/health", (req, res) => {
