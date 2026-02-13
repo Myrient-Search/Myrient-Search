@@ -190,7 +190,9 @@ async function scrapeMyrient() {
     visited.add(normalizedUrl);
     visited.add(currentUrl);
 
-    console.log(`[${scrapedGames.length}/${LIMIT}] [D:${dirs}] Scraping: ${currentUrl}`);
+    console.log(
+      `[${scrapedGames.length}/${LIMIT}] [D:${dirs}] Scraping: ${currentUrl}`,
+    );
 
     try {
       const { data: html } = await axios.get(currentUrl);
@@ -233,37 +235,8 @@ async function scrapeMyrient() {
 
         if (isDir) {
           // Queue subdirectories if not visited
-          const normAbsUrl = absoluteUrl.endsWith("/")
-            ? absoluteUrl.slice(0, -1)
-            : absoluteUrl;
-          if (!visited.has(normAbsUrl)) {
-            // Insert into queue in sorted order based on longest common prefix with current URL
-            let longest = 0;
-            let prev = longest;
-            let inserted = false;
-            for (let url in queue) {
-              longest = stringCompare(queue[url], absoluteUrl);
-              if (prev == longest) {
-                let index = url - 1;
-                if (index < 0) index = 0;
-                if (absoluteUrl[prev] > queue[index][prev]) continue;
-                queue.splice(index, 0, absoluteUrl);
-                inserted = true;
-                break;
-              } else if (url == queue.length - 1) {
-                if (absoluteUrl[longest] > queue[url][longest]) {
-                  queue.push(absoluteUrl);
-                  inserted = true;
-                } else {
-                  queue.splice(url, 0, absoluteUrl);
-                  inserted = true;
-                }
-              }
-              prev = longest;
-            }
-            if (!inserted) {
-              queue.push(absoluteUrl);
-            }
+          if (!visited.has(absoluteUrl)) {
+            insertIntoQueue(queue, absoluteUrl);
             dirs++;
           }
         } else {
@@ -314,5 +287,38 @@ function stringCompare(a, b) {
     if (charA !== charB) {
       return i;
     }
+  }
+}
+
+function insertIntoQueue(queue, url) {
+  // Insert into queue in sorted order based on longest common prefix with current URL
+  let longest = 0;
+  let prev = longest;
+  let inserted = false;
+  for (let item in queue) {
+    longest = stringCompare(queue[item], url);
+    if (prev == longest) {
+      let index = item - 1;
+
+      if (index < 0) index = 0;
+
+      if (url[prev] > queue[index][prev]) continue;
+
+      queue.splice(index, 0, url);
+      inserted = true;
+      break;
+    } else if (item == queue.length - 1) {
+      if (url[longest] > queue[item][longest]) {
+        queue.push(url);
+        inserted = true;
+      } else {
+        queue.splice(item, 0, url);
+        inserted = true;
+      }
+    }
+    prev = longest;
+  }
+  if (!inserted) {
+    queue.push(url);
   }
 }
