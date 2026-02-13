@@ -5,7 +5,7 @@ const path = require("path");
 
 const MYRIENT_URL = "https://myrient.erista.me/files/";
 const OUTPUT_PATH = path.join(__dirname, "data", "scraped_games.json");
-const LIMIT = 1000;
+const LIMIT = 999999999999999999999;
 
 class FileParser {
   parseFilename(filename) {
@@ -237,7 +237,26 @@ async function scrapeMyrient() {
             ? absoluteUrl.slice(0, -1)
             : absoluteUrl;
           if (!visited.has(normAbsUrl)) {
-            queue.push(absoluteUrl);
+            // Insert into queue in sorted order based on longest common prefix with current URL
+            let longest = 0;
+            let prev = longest;
+            for (let url in queue) {
+              longest = stringCompare(queue[url], absoluteUrl);
+              if (prev > longest) {
+                let index = url - 1;
+                if (index < 0) index = 0;
+                let offset = absoluteUrl[prev] > queue[index][prev] ? 0 : -1;
+                queue.splice(url + offset, 0, absoluteUrl);
+                break;
+              } else if (url == queue.length - 1) {
+                if (absoluteUrl[longest] > queue[url][longest]) {
+                  queue.push(absoluteUrl);
+                } else queue.splice(url, 0, absoluteUrl);
+              }
+            }
+            if(queue.length == 0){
+              queue.push(absoluteUrl);
+            }
           }
         } else {
           // File found
@@ -279,3 +298,13 @@ async function scrapeMyrient() {
 }
 
 scrapeMyrient();
+
+function stringCompare(a, b) {
+  for(let i = 0; i < Math.min(a.length, b.length); i++){
+    const charA = a[i];
+    const charB = b[i];
+    if(charA !== charB){
+      return i;
+    }
+  }
+}
