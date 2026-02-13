@@ -174,13 +174,12 @@ async function scrapeMyrient() {
     const currentUrl = queue.shift();
 
     const [urlProto, urlHost] = currentUrl.split("://");
-    const urlHostParts = urlHost.split("/").filter(entry => entry != '');;
-    while(urlHostParts.at(-1) == '.' || urlHostParts.at(-1) == '..'){
-      if(urlHostParts.at(-1) == '..'){
+    const urlHostParts = urlHost.split("/").filter((entry) => entry != "");
+    while (urlHostParts.at(-1) == "." || urlHostParts.at(-1) == "..") {
+      if (urlHostParts.at(-1) == "..") {
         urlHostParts.pop();
         urlHostParts.pop();
-      }
-      else{
+      } else {
         urlHostParts.pop();
       }
     }
@@ -242,19 +241,22 @@ async function scrapeMyrient() {
             let prev = longest;
             for (let url in queue) {
               longest = stringCompare(queue[url], absoluteUrl);
-              if (prev > longest) {
+              if (prev == longest) {
                 let index = url - 1;
                 if (index < 0) index = 0;
-                let offset = absoluteUrl[prev] > queue[index][prev] ? 0 : -1;
-                queue.splice(url + offset, 0, absoluteUrl);
+                if (absoluteUrl[prev] > queue[index][prev]) continue;
+                queue.splice(index, 0, absoluteUrl);
                 break;
               } else if (url == queue.length - 1) {
                 if (absoluteUrl[longest] > queue[url][longest]) {
                   queue.push(absoluteUrl);
-                } else queue.splice(url, 0, absoluteUrl);
+                } else {
+                  queue.splice(url, 0, absoluteUrl);
+                }
               }
+              prev = longest;
             }
-            if(queue.length == 0){
+            if (queue.length == 0) {
               queue.push(absoluteUrl);
             }
           }
@@ -300,10 +302,10 @@ async function scrapeMyrient() {
 scrapeMyrient();
 
 function stringCompare(a, b) {
-  for(let i = 0; i < Math.min(a.length, b.length); i++){
+  for (let i = 0; i < Math.min(a.length, b.length); i++) {
     const charA = a[i];
     const charB = b[i];
-    if(charA !== charB){
+    if (charA !== charB) {
       return i;
     }
   }
