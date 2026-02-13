@@ -168,6 +168,7 @@ async function scrapeMyrient() {
   // Queue of URLs
   const visited = new Set();
   const queue = [MYRIENT_URL];
+  let dirs = 0;
 
   // While we need more games and have places to look
   while (queue.length > 0 && scrapedGames.length < LIMIT) {
@@ -189,7 +190,7 @@ async function scrapeMyrient() {
     visited.add(normalizedUrl);
     visited.add(currentUrl);
 
-    console.log(`[${scrapedGames.length}/${LIMIT}] Scraping: ${currentUrl}`);
+    console.log(`[${scrapedGames.length}/${LIMIT}] [D:${dirs}] Scraping: ${currentUrl}`);
 
     try {
       const { data: html } = await axios.get(currentUrl);
@@ -239,6 +240,7 @@ async function scrapeMyrient() {
             // Insert into queue in sorted order based on longest common prefix with current URL
             let longest = 0;
             let prev = longest;
+            let inserted = false;
             for (let url in queue) {
               longest = stringCompare(queue[url], absoluteUrl);
               if (prev == longest) {
@@ -246,19 +248,23 @@ async function scrapeMyrient() {
                 if (index < 0) index = 0;
                 if (absoluteUrl[prev] > queue[index][prev]) continue;
                 queue.splice(index, 0, absoluteUrl);
+                inserted = true;
                 break;
               } else if (url == queue.length - 1) {
                 if (absoluteUrl[longest] > queue[url][longest]) {
                   queue.push(absoluteUrl);
+                  inserted = true;
                 } else {
                   queue.splice(url, 0, absoluteUrl);
+                  inserted = true;
                 }
               }
               prev = longest;
             }
-            if (queue.length == 0) {
+            if (!inserted) {
               queue.push(absoluteUrl);
             }
+            dirs++;
           }
         } else {
           // File found
