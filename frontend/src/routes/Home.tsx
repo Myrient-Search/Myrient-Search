@@ -104,7 +104,7 @@ export default function Home({ appName }: HomeProps) {
             initial={{ opacity: 0, y: 50 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, ease: "easeOut" }}
-            className="grid w-full max-w-6xl grid-cols-2 gap-6 gap-y-10 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6"
+            className="grid w-full max-w-6xl grid-cols-2 gap-6 gap-y-10 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5"
           >
             {displayedGroups.map((group) => (
               <GameCard key={group[0].id} games={group} />
