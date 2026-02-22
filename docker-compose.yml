@@ -14,8 +14,58 @@ services:
     build: ./backend
     container_name: myrient-backend
     restart: unless-stopped
+    environment:
+      - TWITCH_CLIENT_ID=${TWITCH_CLIENT_ID}
+      - TWITCH_CLIENT_SECRET=${TWITCH_CLIENT_SECRET}
+      - POSTGRES_HOST=postgres
+      - POSTGRES_PORT=${POSTGRES_PORT}
+      - POSTGRES_DB=${POSTGRES_DB}
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - MEILI_HOST=http://meilisearch:7700
+      - MEILI_MASTER_KEY=${MEILI_MASTER_KEY}
+      - ADMIN_KEY=${ADMIN_KEY}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      meilisearch:
+        condition: service_started
     networks:
       - myrient
+
+  postgres:
+    image: postgres:16-alpine
+    container_name: myrient-postgres
+    restart: unless-stopped
+    environment:
+      - POSTGRES_DB=${POSTGRES_DB}
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - myrient
+
+  meilisearch:
+    image: getmeili/meilisearch:v1.7
+    container_name: myrient-meilisearch
+    restart: unless-stopped
+    environment:
+      - MEILI_MASTER_KEY=${MEILI_MASTER_KEY}
+      - MEILI_ENV=production
+    volumes:
+      - meili_data:/meili_data
+    networks:
+      - myrient
+
+volumes:
+  postgres_data:
+  meili_data:
 
 networks:
   myrient:

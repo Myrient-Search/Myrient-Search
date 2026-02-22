@@ -1,7 +1,8 @@
 {
   "scripts": {
     "start": "node server.js",
-    "dev": "nodemon server.js"
+    "dev": "nodemon server.js",
+    "pipeline": "node pipeline.js"
   },
   "devDependencies": {
     "nodemon": "^3.1.11"
@@ -10,6 +11,9 @@
     "axios": "^1.13.5",
     "cheerio": "^1.2.0",
     "dotenv": "^17.2.4",
-    "express": "^5.2.1"
+    "express": "^5.2.1",
+    "meilisearch": "^0.44.0",
+    "node-cron": "^4.2.1",
+    "pg": "^8.13.3"
   }
 }

@@ -1,0 +1,38 @@
+# Dev infrastructure only — postgres + meilisearch with exposed host ports.
+# Usage:
+#   docker compose -f docker-compose.dev.yml up -d
+#   cd backend && npm run dev
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: myrient-dev-postgres
+    restart: unless-stopped
+    environment:
+      - POSTGRES_DB=${POSTGRES_DB}
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_dev_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  meilisearch:
+    image: getmeili/meilisearch:v1.7
+    container_name: myrient-dev-meilisearch
+    restart: unless-stopped
+    environment:
+      - MEILI_MASTER_KEY=${MEILI_MASTER_KEY}
+      - MEILI_ENV=development
+    ports:
+      - "7700:7700"
+    volumes:
+      - meili_dev_data:/meili_data
+
+volumes:
+  postgres_dev_data:
+  meili_dev_data:
