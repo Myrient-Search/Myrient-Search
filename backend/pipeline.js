@@ -20,6 +20,26 @@ const axios = require("axios");
 const cheerio = require("cheerio");
 const { pool, query, initDb } = require("./db");
 const { getMeiliClient, initMeili, INDEX_NAME } = require("./meili");
+const nonGameTermsData = require("./data/nonGameTerms.json");
+const nonGameTerms = nonGameTermsData.terms.map((t) => t.toLowerCase());
+
+function isGameForIGDB(filename) {
+  if (!filename) return false;
+  const lowerFileName = filename.toLowerCase();
+  return !nonGameTerms.some((term) => {
+    // Treat as non-game if the term is the extension
+    if (lowerFileName.endsWith(`.${term}`)) return true;
+    // Or if it appears in metadata tags like (Manual) or [Update]
+    if (
+      lowerFileName.includes(`(${term})`) ||
+      lowerFileName.includes(`[${term}]`)
+    )
+      return true;
+    // Or if the filename ends with " term"
+    if (lowerFileName.endsWith(` ${term}`)) return true;
+    return false;
+  });
+}
 
 // ── Tuning constants ──────────────────────────────────────────────────────────
 const MYRIENT_URL = "https://myrient.erista.me/files/";
@@ -181,7 +201,7 @@ async function batchUpsert(games) {
      ON CONFLICT (download_url) DO UPDATE SET
        game_name=EXCLUDED.game_name, platform=EXCLUDED.platform, group_name=EXCLUDED.group_name,
        region=EXCLUDED.region, size=EXCLUDED.size, tags=EXCLUDED.tags
-     RETURNING id, game_name, description`,
+     RETURNING id, game_name, description, filename`,
     values,
   );
   return rows;
@@ -365,7 +385,11 @@ async function crawl({ mode, enrichQueue }) {
       const toEnrich = [];
       const alreadyEnrichedIds = [];
       for (const row of rows) {
-        if (mode === "clean" || !row.description)
+        // Only enrich if it's missing description AND it appears to be an actual game
+        if (
+          (mode === "clean" || !row.description) &&
+          isGameForIGDB(row.filename)
+        )
           toEnrich.push({ id: row.id, game_name: row.game_name });
         else alreadyEnrichedIds.push(row.id);
       }
