@@ -1,18 +1,18 @@
 import { useEffect, useState } from "react";
 
 interface Stats {
-  total_queries: number;
   total_files: number;
   files_with_metadata: number;
-  last_crawl_date: string;
+  indexed_documents: number;
+  last_crawl_date: string | null;
 }
 
 export function Footer() {
   const [stats, setStats] = useState<Stats>({
-    total_queries: 0,
     total_files: 0,
     files_with_metadata: 0,
-    last_crawl_date: "Loading...",
+    indexed_documents: 0,
+    last_crawl_date: null,
   });
 
   useEffect(() => {
@@ -36,10 +36,10 @@ export function Footer() {
   return (
     <footer className="w-full p-2 text-center text-[10px] md:text-[13px] font-mono text-zinc-500">
       <p className="opacity-60">
-        Number of Queries: {stats.total_queries.toLocaleString()} | Known Files:{" "}
-        {stats.total_files.toLocaleString()} | Files with Metadata:{" "}
-        {stats.files_with_metadata.toLocaleString()} | Time of Last Crawl:{" "}
-        {stats.last_crawl_date}
+        Known Files: {stats.total_files?.toLocaleString() ?? "—"} | With
+        Metadata: {stats.files_with_metadata?.toLocaleString() ?? "—"} |
+        Indexed: {stats.indexed_documents?.toLocaleString() ?? "—"} | Last
+        Crawl: {stats.last_crawl_date ?? "Never"}
       </p>
     </footer>
   );
