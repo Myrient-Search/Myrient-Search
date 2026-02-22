@@ -1,15 +1,14 @@
-import { Bot } from "lucide-react";
 import { useState, useEffect } from "react";
 import figlet from "figlet";
 import big from "figlet/importable-fonts/Big.js";
 import { useDebounce } from "use-debounce";
 import { motion } from "framer-motion";
 
-import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { GameCard } from "@/components/GameCard";
+import { ChatWidget } from "@/components/ChatWidget";
 
 interface HomeProps {
   appName: string;
@@ -120,13 +119,8 @@ export default function Home({ appName }: HomeProps) {
 
       <Footer />
 
-      <Button
-        variant="default"
-        size="icon"
-        className="fixed right-4 bottom-4 z-50 h-12 w-12 rounded-full border-2 shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] hover:shadow-none bg-[#FFD700] text-black"
-      >
-        <Bot className="size-6" />
-      </Button>
+      {/* AI Chat Widget (includes its own FAB + panel) */}
+      <ChatWidget />
     </div>
   );
 }

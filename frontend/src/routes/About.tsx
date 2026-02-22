@@ -9,7 +9,7 @@ import {
   Github,
   ChevronDown,
 } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 
 interface AboutProps {
@@ -20,6 +20,12 @@ interface AccordionItemProps {
   title: React.ReactNode;
   children: React.ReactNode;
   defaultOpen?: boolean;
+}
+
+interface AiConfig {
+  enabled: boolean;
+  provider: string | null;
+  model: string | null;
 }
 
 function AccordionItem({
@@ -62,6 +68,17 @@ function AccordionItem({
 }
 
 export default function About({ appName }: AboutProps) {
+  const [aiConfig, setAiConfig] = useState<AiConfig | null>(null);
+
+  useEffect(() => {
+    fetch("/api/ai-config")
+      .then((r) => r.json())
+      .then((d) => setAiConfig(d))
+      .catch(() =>
+        setAiConfig({ enabled: false, provider: null, model: null }),
+      );
+  }, []);
+
   return (
     <div className="relative flex min-h-screen w-full flex-col bg-zinc-900 font-base text-foreground selection:bg-main selection:text-main-foreground">
       <Header appName={appName} />
@@ -72,12 +89,11 @@ export default function About({ appName }: AboutProps) {
         </h1>
 
         <div className="w-full max-w-4xl space-y-6">
-          {/* Main Into */}
+          {/* Main Info */}
           <AccordionItem
             title={
               <>
-                <Info />{" "}
-                <span>General Info</span>
+                <Info /> <span>General Info</span>
               </>
             }
             defaultOpen={true}
@@ -150,8 +166,8 @@ export default function About({ appName }: AboutProps) {
               </li>
             </ul>
             <p className="text-xs text-zinc-500 italic mb-4">
-              For the best gaming experience, use a Chromium-based browser
-              with hardware acceleration turned on.
+              For the best gaming experience, use a Chromium-based browser with
+              hardware acceleration turned on.
             </p>
             <p className="text-xs text-zinc-500 italic">
               ROM hacks, soundtracks, and other non-game content are not
@@ -167,21 +183,48 @@ export default function About({ appName }: AboutProps) {
               </>
             }
           >
-            <p className="mb-4 text-sm text-zinc-300 leading-relaxed">
-              This website features an AI-powered assistant that can help you
-              find games, provide recommendations, and answer questions about
-              retro gaming.
-            </p>
-            <p className="mb-4 text-sm text-zinc-300 leading-relaxed">
-              Powered by Groq using the openai/gpt-oss-20b model.
-            </p>
-            <p className="text-xs text-zinc-500">
-              The AI assistant is powered by an external service. Please refer
-              to the service's privacy policy for more information.
-            </p>
+            {aiConfig === null ? (
+              <p className="text-sm text-zinc-500">Loading AI info…</p>
+            ) : aiConfig.enabled ? (
+              <>
+                <p className="mb-4 text-sm text-zinc-300 leading-relaxed">
+                  This website features an AI-powered assistant that can help
+                  you find games, provide recommendations, and answer questions
+                  about retro gaming.
+                </p>
+                <p className="mb-4 text-sm text-zinc-300 leading-relaxed">
+                  Powered by{" "}
+                  <span className="text-[#FFD700] font-bold">
+                    {aiConfig.provider}
+                  </span>{" "}
+                  using the{" "}
+                  <span className="font-mono text-xs bg-zinc-700 px-1 py-0.5 rounded text-white">
+                    {aiConfig.model}
+                  </span>{" "}
+                  model.
+                </p>
+                <p className="text-xs text-zinc-500">
+                  The AI assistant is powered by an external service. Please
+                  refer to the service's privacy policy for more information.
+                </p>
+              </>
+            ) : (
+              <>
+                <p className="mb-4 text-sm text-zinc-300 leading-relaxed">
+                  The AI assistant is currently disabled on this instance.
+                </p>
+                <p className="text-sm text-zinc-500">
+                  If you're self-hosting, you can enable it by setting{" "}
+                  <span className="font-mono text-xs bg-zinc-700 px-1 py-0.5 rounded text-white">
+                    AI_ENABLED=true
+                  </span>{" "}
+                  in your environment configuration.
+                </p>
+              </>
+            )}
           </AccordionItem>
 
-          {/* Credits - Kept separate as requested style 'FAQ-like' usually implies the content, credits are often static footer. But making them consistent: */}
+          {/* Credits */}
           <AccordionItem title="Credits">
             <div className="text-center border-b-2 border-zinc-700 pb-8 mb-8">
               <p className="text-xs text-zinc-500 uppercase mb-4">
