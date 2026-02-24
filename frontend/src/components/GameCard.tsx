@@ -1,6 +1,6 @@
 import { motion, AnimatePresence } from "framer-motion";
 import { useState, useEffect } from "react";
-import { X, ChevronLeft, ChevronRight } from "lucide-react";
+import { X, Globe, FlaskConical, Flag, Calendar, FileText, HardDrive } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
 // Cache to prevent multiple fetches across GameCard instances
@@ -15,6 +15,7 @@ export interface Game {
   videogame?: string; // Platform
   filename?: string;
   size?: string;
+  download_url?: string;
 }
 
 interface GameCardProps {
@@ -23,8 +24,6 @@ interface GameCardProps {
 
 export function GameCard({ games }: GameCardProps) {
   const [isOpen, setIsOpen] = useState(false);
-  const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
-  const [lightboxDirection, setLightboxDirection] = useState(0);
   const [consoleIcons, setConsoleIcons] = useState<Record<string, string>>({});
   const navigate = useNavigate();
 
@@ -51,8 +50,6 @@ export function GameCard({ games }: GameCardProps) {
   const count = games.length;
   const hasMultipleVersions = count > 1;
   const showRegion = hasMultipleVersions && games.some(g => g.region !== games[0].region);
-  const showPlatform = hasMultipleVersions && games.some(g => g.videogame !== games[0].videogame);
-  const showFilename = hasMultipleVersions && games.some(g => g.filename !== games[0].filename);
   const showDate = hasMultipleVersions && games.some(g => g.release_date !== games[0].release_date);
   const showSize = hasMultipleVersions && games.some(g => g.size !== games[0].size);
 
@@ -68,15 +65,15 @@ export function GameCard({ games }: GameCardProps) {
     else if (r.startsWith("JPN") || r.startsWith("JAP")) flagCode = "jp";
     else if (r === "KOR" || r === "KOREA") flagCode = "kr";
     else if (r === "CHN" || r === "CHINA") flagCode = "cn";
-    else if (r === "WLD" || r === "WORLD") icon = "🌍";
-    else if (r === "BETA") icon = "🧪";
+    else if (r === "WLD" || r === "WORLD") icon = <Globe className="w-3.5 h-3.5" />;
+    else if (r === "BETA") icon = <FlaskConical className="w-3.5 h-3.5" />;
 
     return (
       <span className="flex items-center gap-1.5 uppercase leading-none">
         {flagCode ? (
           <img src={`https://flagcdn.com/w20/${flagCode}.png`} alt={r} className="w-[16px] h-[11px] object-cover rounded-[2px] shadow-sm" />
         ) : (
-          <span className="text-[14px] leading-none mb-[1px]">{icon || "🏳️"}</span>
+          <span className="flex items-center justify-center">{icon || <Flag className="w-3.5 h-3.5" />}</span>
         )}
         <span>{r === "BETA" ? "Beta" : region}</span>
       </span>
@@ -124,7 +121,7 @@ export function GameCard({ games }: GameCardProps) {
           </div>
 
           <div className="flex flex-col p-3">
-            <h3 className="text-[9px] font-bold uppercase text-white md:text-xs">
+            <h3 className="text-[7px] font-bold uppercase text-white md:text-[8px] line-clamp-2 overflow-hidden text-ellipsis leading-tight break-words">
               {mainGame.game_name}
             </h3>
             <div className="mt-2 flex items-center justify-between text-[9px] text-zinc-400">
@@ -170,12 +167,7 @@ export function GameCard({ games }: GameCardProps) {
                     className="min-w-[200px] max-w-[220px] flex-shrink-0 flex flex-col overflow-hidden rounded-md border-4 border-black bg-zinc-800 shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] cursor-pointer hover:shadow-[12px_12px_0px_0px_rgba(0,0,0,1)] hover:-translate-y-1 transition-all"
                   >
                     <div
-                      className="aspect-[2/3] w-full overflow-hidden bg-zinc-900 relative group/img cursor-zoom-in"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setLightboxDirection(0);
-                        setLightboxIndex(index);
-                      }}
+                      className="aspect-[2/3] w-full overflow-hidden bg-zinc-900 relative group/img"
                     >
                       <img
                         src={
@@ -188,7 +180,7 @@ export function GameCard({ games }: GameCardProps) {
                       />
                     </div>
                     <div className="p-3 bg-zinc-800">
-                      <h3 className="text-xs font-bold uppercase text-white mb-2">
+                      <h3 className="text-[8px] font-bold uppercase text-white mb-2 line-clamp-2 overflow-hidden text-ellipsis leading-tight break-words">
                         {game.game_name}
                       </h3>
                       <div className="flex flex-wrap gap-2">
@@ -197,31 +189,34 @@ export function GameCard({ games }: GameCardProps) {
                             {renderRegion(game.region)}
                           </span>
                         )}
-                        {showPlatform && game.videogame && (
-                          <span className="inline-flex items-center gap-1.5 px-2 py-1 bg-[#FFD700] text-black text-[13px] rounded-sm font-bold border-2 border-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]" title="Platform">
-                            {consoleIcons[game.videogame] && (
-                              <img
-                                src={`/api/proxy-assets?url=${encodeURIComponent(consoleIcons[game.videogame])}`}
-                                alt={game.videogame}
-                                className="h-4 w-4 object-contain"
-                              />
-                            )}
-                            {game.videogame}
-                          </span>
-                        )}
                         {showDate && game.release_date && (
                           <span className="inline-flex items-center gap-1.5 px-2 py-1 bg-[#ff5e5e] text-black text-[13px] rounded-sm font-bold border-2 border-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]" title="Release Date">
-                            📅 {game.release_date}
-                          </span>
-                        )}
-                        {showFilename && game.filename && (
-                          <span className="inline-flex items-center gap-1.5 px-2 py-1 bg-[#4ade80] text-black text-[13px] rounded-sm font-bold border-2 border-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] truncate max-w-[180px]" title="Filename">
-                            📁 {game.filename}
+                            <Calendar className="w-4 h-4 shrink-0" /> {game.release_date}
                           </span>
                         )}
                         {showSize && game.size && (
                           <span className="inline-flex items-center gap-1.5 px-2 py-1 bg-[#a855f7] text-white text-[13px] rounded-sm font-bold border-2 border-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]" title="File Size">
-                            💾 {game.size}
+                            <HardDrive className="w-4 h-4 shrink-0" /> {game.size}
+                          </span>
+                        )}
+                        {game.filename && (
+                          <span
+                            className="inline-flex w-full items-start gap-1.5 px-2 py-1 bg-white text-black text-[11px] rounded-sm font-bold border-2 border-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] break-all whitespace-normal text-left leading-tight"
+                            title="Filename">
+                            <FileText className="w-3.5 h-3.5 shrink-0 mt-[1px]" />
+                            <span>{game.filename}</span>
+                          </span>
+                        )}
+                        {game.videogame && (
+                          <span className="inline-flex w-full items-center justify-center gap-2 px-3 py-2 mt-1 bg-[#FFD700] text-black text-[14px] rounded-sm font-black uppercase border-2 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]" title="Platform">
+                            {consoleIcons[game.videogame] && (
+                              <img
+                                src={`/api/proxy-assets?url=${encodeURIComponent(consoleIcons[game.videogame])}`}
+                                alt={game.videogame}
+                                className="h-5 w-5 object-contain drop-shadow-md"
+                              />
+                            )}
+                            {game.videogame}
                           </span>
                         )}
                       </div>
@@ -240,78 +235,6 @@ export function GameCard({ games }: GameCardProps) {
           </div>
         )}
 
-        {lightboxIndex !== null && (
-          <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              transition={{ duration: 0.2 }}
-              className="absolute inset-0 bg-black/90"
-              onClick={(e) => {
-                e.stopPropagation();
-                setLightboxIndex(null);
-              }}
-            />
-
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                setLightboxDirection(-1);
-                setLightboxIndex((lightboxIndex - 1 + games.length) % games.length);
-              }}
-              className="absolute left-4 top-1/2 -translate-y-1/2 text-white hover:text-[#FFD700] z-[70] p-2"
-            >
-              <ChevronLeft className="size-12" />
-            </button>
-
-            <div className="relative z-[70] w-full max-w-4xl max-h-[90vh] flex items-center justify-center pointer-events-none overflow-hidden">
-              <AnimatePresence mode="popLayout" custom={lightboxDirection}>
-                <motion.img
-                  key={lightboxIndex}
-                  custom={lightboxDirection}
-                  variants={{
-                    enter: (d: number) => ({ x: d > 0 ? 500 : d < 0 ? -500 : 0, opacity: 0, scale: 0.9 }),
-                    center: { x: 0, opacity: 1, scale: 1 },
-                    exit: (d: number) => ({ x: d < 0 ? 500 : d > 0 ? -500 : 0, opacity: 0, scale: 0.9 })
-                  }}
-                  initial="enter"
-                  animate="center"
-                  exit="exit"
-                  transition={{ type: "spring", stiffness: 300, damping: 30 }}
-                  src={
-                    games[lightboxIndex].images && games[lightboxIndex].images.length > 0
-                      ? games[lightboxIndex].images[0]
-                      : "https://placehold.co/400x600?text=No+Image"
-                  }
-                  alt={games[lightboxIndex].game_name}
-                  className="max-h-[85vh] max-w-full object-contain border-4 border-black shadow-[12px_12px_0px_0px_rgba(0,0,0,1)] bg-zinc-900 pointer-events-auto"
-                />
-              </AnimatePresence>
-            </div>
-
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                setLightboxDirection(1);
-                setLightboxIndex((lightboxIndex + 1) % games.length);
-              }}
-              className="absolute right-4 top-1/2 -translate-y-1/2 text-white hover:text-[#FFD700] z-[70] p-2"
-            >
-              <ChevronRight className="size-12" />
-            </button>
-
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                setLightboxIndex(null);
-              }}
-              className="absolute top-4 right-4 z-[70] p-2 text-white hover:text-[#ff5e5e]"
-            >
-              <X className="size-8" />
-            </button>
-          </div>
-        )}
       </AnimatePresence>
     </>
   );

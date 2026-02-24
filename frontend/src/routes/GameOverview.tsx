@@ -1,6 +1,6 @@
 import { useParams, useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
-import { ArrowLeft, Bot, Calendar, HardDrive, Star, Users, X, ChevronLeft, ChevronRight } from "lucide-react";
+import { ArrowLeft, Bot, Calendar, HardDrive, Star, Users, X, ChevronLeft, ChevronRight, Play } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
 import { Button } from "@/components/ui/button";
@@ -22,6 +22,7 @@ export interface Game {
     size: string;
     upload_date: string;
     description: string;
+    download_url?: string;
     images: string[] | null;
     videos: string[] | null;
 }
@@ -158,17 +159,41 @@ export default function GameOverview({ appName }: { appName: string }) {
                                     {game.videogame}
                                 </span>
                             )}
-                            {game.size && (
-                                <span className="flex items-center gap-1 border-2 border-black bg-[#b19cd9] px-3 py-1 text-black font-bold uppercase shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]">
-                                    <HardDrive className="size-4" /> {game.size}
-                                </span>
-                            )}
                         </div>
 
-                        {/* Action Button */}
-                        <Button className="w-full max-w-md mt-2 border-4 border-black bg-[#FFD700] text-black text-xl py-6 hover:bg-[#ffc800] shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] hover:translate-y-1 hover:translate-x-1 hover:shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] transition-all font-bold uppercase tracking-widest">
-                            Download
-                        </Button>
+                        {/* Action Buttons */}
+                        <div className="w-full max-w-md mt-2 flex flex-col gap-4">
+                            <Button className="w-full border-4 border-black bg-[#4ade80] text-black hover:bg-[#22c55e] shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] hover:translate-y-1 hover:translate-x-1 hover:shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] transition-all flex flex-row items-center justify-center p-4 gap-3 h-auto">
+                                <Play className="size-8 fill-black" />
+                                <span className="text-2xl font-black uppercase tracking-widest leading-none mt-1">Play</span>
+                            </Button>
+
+                            <Button
+                                onClick={() => {
+                                    if (game.download_url) {
+                                        window.open(game.download_url, '_blank');
+                                    }
+                                }}
+                                disabled={!game.download_url}
+                                className="w-full border-4 border-black bg-[#FFD700] text-black hover:bg-[#ffc800] shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] hover:translate-y-1 hover:translate-x-1 hover:shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] transition-all flex flex-col items-center justify-center p-3 gap-2 h-auto disabled:opacity-50 disabled:cursor-not-allowed">
+                                <span className="text-2xl font-black uppercase tracking-widest leading-none mt-1">Download</span>
+                                {(game.filename || game.size) && (
+                                    <div className="flex flex-col items-center w-full bg-white/60 border-2 border-black p-2 mt-1 shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]">
+                                        {game.filename && (
+                                            <span className="text-[13px] font-bold text-black break-words whitespace-normal text-center leading-tight">
+                                                {game.filename}
+                                            </span>
+                                        )}
+                                        {game.size && (
+                                            <span className="text-xs font-black text-black mt-1.5 uppercase flex items-center justify-center gap-1.5 bg-[#b19cd9] border-2 border-black px-2 py-0.5 shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]">
+                                                <HardDrive className="size-3" />
+                                                {game.size}
+                                            </span>
+                                        )}
+                                    </div>
+                                )}
+                            </Button>
+                        </div>
 
                         {/* Meta details sidebar */}
                         <div className="w-full max-w-md flex flex-col gap-6 mt-4">
@@ -190,10 +215,10 @@ export default function GameOverview({ appName }: { appName: string }) {
                                 </p>
                             </div>
 
-                            <div className="border-4 border-black bg-[#ff5e5e] p-6 shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] rounded-sm">
-                                <h3 className="text-xl font-black uppercase text-black mb-3 border-b-4 border-black pb-2">Filename</h3>
-                                <p className="font-bold text-black text-xs break-all bg-white/50 p-2 border-2 border-black">
-                                    {game.filename || "N/A"}
+                            <div className="border-4 border-black bg-[#FFD700] p-6 shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] rounded-sm">
+                                <h3 className="text-xl font-black uppercase text-black mb-3 border-b-4 border-black pb-2">Platform</h3>
+                                <p className="font-bold text-black text-sm uppercase">
+                                    {game.videogame || "N/A"}
                                 </p>
                             </div>
                         </div>
