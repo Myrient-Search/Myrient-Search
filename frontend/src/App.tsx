@@ -1,4 +1,5 @@
 import { BrowserRouter, Route, Routes } from "react-router-dom";
+import { useState, useEffect } from "react";
 import Home from "@/routes/Home";
 import Emulators from "@/routes/Emulators";
 import About from "./routes/About";
@@ -6,7 +7,18 @@ import GameOverview from "./routes/GameOverview";
 import Admin from "./routes/Admin";
 
 function App() {
-  const appName = import.meta.env.VITE_APPLICATION_NAME || "Myrient Search";
+  const [appName, setAppName] = useState("");
+
+  useEffect(() => {
+    fetch("/api/config")
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.appName) {
+          setAppName(data.appName);
+        }
+      })
+      .catch((err) => console.error("Failed to fetch config:", err));
+  }, []);
 
   return (
     <BrowserRouter>

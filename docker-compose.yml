@@ -15,6 +15,7 @@ services:
     container_name: myrient-backend
     restart: unless-stopped
     environment:
+      - APPLICATION_NAME=${APPLICATION_NAME}
       - TWITCH_CLIENT_ID=${TWITCH_CLIENT_ID}
       - TWITCH_CLIENT_SECRET=${TWITCH_CLIENT_SECRET}
       - POSTGRES_HOST=postgres
@@ -25,6 +26,11 @@ services:
       - MEILI_HOST=http://meilisearch:7700
       - MEILI_MASTER_KEY=${MEILI_MASTER_KEY}
       - ADMIN_KEY=${ADMIN_KEY}
+      - AI_ENABLED=${AI_ENABLED}
+      - AI_API_KEY=${AI_API_KEY}
+      - AI_API_URL=${AI_API_URL}
+      - AI_MODEL=${AI_MODEL}
+      - BASE_URL=${BASE_URL}
     depends_on:
       postgres:
         condition: service_healthy
