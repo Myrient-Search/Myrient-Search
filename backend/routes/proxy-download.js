@@ -26,17 +26,24 @@ module.exports = async function (req, res) {
     });
 
     // Forward headers we care about
-    const headersToForward = [
-      "content-type",
-      "content-disposition",
-      "content-length",
-    ];
+    const headersToForward = ["content-type", "content-length"];
     headersToForward.forEach((header) => {
       const val = response.headers.get(header);
       if (val) {
         res.setHeader(header, val);
       }
     });
+
+    // Special handling for Content-Disposition to ensure proper filename
+    let contentDisposition = response.headers.get("content-disposition");
+    if (!contentDisposition) {
+      const urlObj = new URL(targetUrl);
+      const filename = decodeURIComponent(
+        urlObj.pathname.split("/").pop() || "download",
+      );
+      contentDisposition = `attachment; filename="${filename.replace(/"/g, '\\"')}"`;
+    }
+    res.setHeader("Content-Disposition", contentDisposition);
 
     res.status(response.status);
 
