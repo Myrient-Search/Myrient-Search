@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="assets/logo/favicon.png" alt="Myrient Search logo" width="200"
+  <img src="assets/logo/myrient_temp_logo.png" alt="Myrient Search logo" width="200"
   style = "border-radius: 30%;"/>
 </p>
 
@@ -19,8 +19,8 @@
 </p>
 
 <p align="center">
-  <a href="https://www.python.org/">
-    <img src="https://img.shields.io/github/languages/top/Myrient-Search/Myrient-Search?logo=python&logoColor=yellow&style=for-the-badge" alt="Language">
+  <a href="https://nodejs.org/">
+    <img src="https://img.shields.io/github/languages/top/Myrient-Search/Myrient-Search?logo=typescript&logoColor=white&style=for-the-badge" alt="Language">
   </a>
   <a href="https://github.com/Myrient-Search/Myrient-Search/blob/main/LICENSE">
     <img src="https://img.shields.io/github/license/Myrient-Search/Myrient-Search?style=for-the-badge" alt="License">
