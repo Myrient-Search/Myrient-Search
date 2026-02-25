@@ -5,6 +5,7 @@ import Emulators from "@/routes/Emulators";
 import About from "./routes/About";
 import GameOverview from "./routes/GameOverview";
 import Admin from "./routes/Admin";
+import Emulator from "./routes/Emulator";
 import Settings from "./routes/Settings";
 
 function App() {
@@ -29,6 +30,7 @@ function App() {
         <Route path="/about" element={<About appName={appName} />} />
         <Route path="/settings" element={<Settings appName={appName} />} />
         <Route path="/game/:id" element={<GameOverview appName={appName} />} />
+        <Route path="/play/:id" element={<Emulator appName={appName} />} />
         <Route path="/admin" element={<Admin appName={appName} />} />
       </Routes>
     </BrowserRouter>

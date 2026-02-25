@@ -1,0 +1,78 @@
+{
+    "Nintendo Entertainment System": {
+        "core": "fceumm",
+        "unpackRoms": true
+    },
+    "Super Nintendo Entertainment System": {
+        "core": "snes9x",
+        "unpackRoms": true
+    },
+    "Nintendo 64": {
+        "core": "mupen64plus_next",
+        "unpackRoms": true
+    },
+    "Nintendo DS": {
+        "core": "desmume2015",
+        "unpackRoms": true
+    },
+    "Nintendo Game Boy": {
+        "core": "gambatte",
+        "unpackRoms": true
+    },
+    "Nintendo Game Boy Color": {
+        "core": "gambatte",
+        "unpackRoms": true
+    },
+    "Nintendo Game Boy Advance": {
+        "core": "mgba",
+        "unpackRoms": true
+    },
+    "Sega Master System": {
+        "core": "smsplus",
+        "unpackRoms": true
+    },
+    "Sega Game Gear": {
+        "core": "genesis_plus_gx",
+        "unpackRoms": false
+    },
+    "Sega Mega Drive": {
+        "core": "genesis_plus_gx",
+        "unpackRoms": true
+    },
+    "Sega 32X": {
+        "core": "picodrive",
+        "unpackRoms": true
+    },
+    "Sega Saturn": {
+        "core": "yabause",
+        "unpackRoms": true
+    },
+    "Atari 2600": {
+        "core": "stella2014",
+        "unpackRoms": true
+    },
+    "Atari 5200": {
+        "core": "a5200",
+        "unpackRoms": true
+    },
+    "Atari 7800": {
+        "core": "prosystem",
+        "unpackRoms": true
+    },
+    "Atari Jaguar": {
+        "core": "virtualjaguar",
+        "unpackRoms": true
+    },
+    "Atari Lynx": {
+        "core": "handy",
+        "unpackRoms": true
+    },
+    "Sony PlayStation 1": {
+        "core": "pcsx_rearmed",
+        "unpackRoms": true
+    },
+    "Sony PlayStation Portable": {
+        "core": "ppsspp",
+        "unpackRoms": true
+    }
+}

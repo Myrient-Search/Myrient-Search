@@ -123,7 +123,7 @@ export function ChatWidget() {
                   if (newMsgs[newMsgs.length - 1].role === "tool_status") {
                     newMsgs[newMsgs.length - 1] = {
                       role: "tool_status",
-                      content: `Finished tool: ${data.name} (Found ${data.count} items)`,
+                      content: `Searched across ${data.count} items`,
                     };
                   }
                   // Start a new assistant message context for the follow-up text

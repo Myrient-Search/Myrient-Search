@@ -46,6 +46,7 @@ export default function GameOverview({ appName }: { appName: string }) {
   const [error, setError] = useState<string | null>(null);
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
   const [lightboxDirection, setLightboxDirection] = useState(0);
+  const [compatibleSystems, setCompatibleSystems] = useState<string[]>([]);
 
   const openLightbox = (index: number) => {
     setLightboxDirection(0);
@@ -83,6 +84,16 @@ export default function GameOverview({ appName }: { appName: string }) {
         setError(err.message);
         setLoading(false);
       });
+
+    // Fetch compatible systems for the play button
+    fetch("/api/emulator/systems")
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.systems) {
+          setCompatibleSystems(data.systems);
+        }
+      })
+      .catch((err) => console.error("Failed to load emulator systems:", err));
   }, [id]);
 
   if (loading) {
@@ -184,12 +195,15 @@ export default function GameOverview({ appName }: { appName: string }) {
             {/* Action Buttons */}
             <div className="w-full max-w-md mt-2 flex flex-col gap-4">
               <Button
-                disabled
+                onClick={() => navigate(`/play/${game.id}`)}
+                disabled={!compatibleSystems.includes(game.platform)}
                 className="w-full border-4 border-black bg-[#4ade80] text-black hover:bg-[#22c55e] shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] hover:translate-y-1 hover:translate-x-1 hover:shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] transition-all flex flex-row items-center justify-center p-4 gap-3 h-auto disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 <Play className="size-8 fill-black" />
                 <span className="text-2xl font-black uppercase tracking-widest leading-none mt-1">
-                  Play (Soon)
+                  {compatibleSystems.includes(game.platform)
+                    ? "Play"
+                    : "Unsupported"}
                 </span>
               </Button>
 

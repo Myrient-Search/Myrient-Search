@@ -44,6 +44,9 @@ module.exports = async function (req, res) {
       contentDisposition = `attachment; filename="${filename.replace(/"/g, '\\"')}"`;
     }
     res.setHeader("Content-Disposition", contentDisposition);
+    res.setHeader("Cross-Origin-Resource-Policy", "cross-origin");
+    res.setHeader("Cross-Origin-Embedder-Policy", "require-corp");
+    res.setHeader("Cross-Origin-Opener-Policy", "same-origin");
 
     res.status(response.status);
 
