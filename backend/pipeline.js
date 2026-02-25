@@ -22,6 +22,69 @@ const { pool, query, initDb } = require("./db");
 const { getMeiliClient, initMeili, INDEX_NAME } = require("./meili");
 const nonGameTermsData = require("./data/nonGameTerms.json");
 const nonGameTerms = nonGameTermsData.terms.map((t) => t.toLowerCase());
+const catList = require("./data/categories.json");
+
+function findCategory(str, catList) {
+  let lowerStr = str.toLowerCase();
+  let foundCat = "";
+  let catLength = 0;
+  let foundSubCat = "";
+  let subCatLength = 0;
+  for (let cat in catList.Categories) {
+    if (lowerStr.includes(cat.toLowerCase())) {
+      if (cat.length > catLength) {
+        foundCat = cat;
+        catLength = cat.length;
+      }
+    }
+  }
+  if (foundCat) {
+    for (let subCat in catList.Categories[foundCat]) {
+      let subCatString = catList.Categories[foundCat][subCat]; //I will go insane if this is inlined repeatedly
+      if (lowerStr.includes(subCatString.toLowerCase())) {
+        if (subCatString.length > subCatLength) {
+          foundSubCat = subCatString;
+          subCatLength = subCatString.length;
+        }
+      }
+    }
+  } else {
+    for (let cat in catList.Categories["Others"]) {
+      let catString = catList.Categories["Others"][cat];
+      if (lowerStr.includes(catString.toLowerCase())) {
+        if (catString.length > catLength) {
+          foundCat = catString;
+          catLength = catString.length;
+        }
+      }
+    }
+    if (!foundCat) {
+      foundCat = "Others";
+    }
+  }
+  //special fix ups
+  for (let cat in catList.Special) {
+    let specialString = catList.Special[cat];
+    if (foundCat == cat) {
+      foundCat = specialString;
+    }
+    if (foundSubCat == cat) {
+      foundSubCat = specialString;
+    }
+    if (foundCat == "Others") {
+      if (lowerStr.includes(cat.toLowerCase())) {
+        foundCat == specialString;
+      }
+    }
+  }
+  if (foundSubCat.includes(foundCat)) {
+    foundCat = "";
+  }
+  return {
+    cat: foundCat,
+    subCat: foundSubCat,
+  };
+}
 
 function isGameForIGDB(filename) {
   if (!filename) return false;
@@ -232,6 +295,7 @@ async function batchIndexGames(rows) {
       publisher: r.publisher || null,
       genre: r.genre || null,
       images: r.images || [],
+      is_non_game: !isGameForIGDB(r.filename),
     }));
     await getMeiliClient()
       .index(INDEX_NAME)
@@ -420,7 +484,18 @@ async function crawl({ mode, enrichQueue }) {
         .split("/")
         .filter((p) => p && p !== "files");
       const group = pathSegs[0] ? decodeURIComponent(pathSegs[0]) : "";
-      const platform = pathSegs[1] ? decodeURIComponent(pathSegs[1]) : group;
+      let platform = pathSegs[1] ? decodeURIComponent(pathSegs[1]) : group;
+
+      if (platform) {
+        const platformMatch = findCategory(platform, catList);
+        if (platformMatch.cat && platformMatch.subCat) {
+          platform = `${platformMatch.cat} - ${platformMatch.subCat}`;
+        } else if (platformMatch.subCat) {
+          platform = platformMatch.subCat;
+        } else if (platformMatch.cat) {
+          platform = platformMatch.cat;
+        }
+      }
 
       $("a").each((_, el) => {
         const href = $(el).attr("href");

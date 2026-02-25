@@ -1,16 +1,7 @@
-import { Globe } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useState, useEffect } from "react";
 import figlet from "figlet";
 import small from "figlet/importable-fonts/Small.js";
-
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 
 interface HeaderProps {
   appName: string;
@@ -49,9 +40,12 @@ export function Header({ appName }: HeaderProps) {
         <nav>
           <ul className="flex gap-4 text-[10px] md:text-xs text-white">
             <li>
-              <a href="#" className="hover:underline hover:decoration-2">
+              <Link
+                to="/settings"
+                className="hover:underline hover:decoration-2"
+              >
                 Settings
-              </a>
+              </Link>
             </li>
             <li>
               <Link
@@ -68,23 +62,6 @@ export function Header({ appName }: HeaderProps) {
             </li>
           </ul>
         </nav>
-      </div>
-
-      <div className="w-[120px]">
-        <Select defaultValue="en">
-          <SelectTrigger className="bg-zinc-800 text-white border-zinc-700 h-7 text-[10px]">
-            <div className="flex items-center gap-2">
-              <Globe className="size-3" />
-              <SelectValue placeholder="Language" />
-            </div>
-          </SelectTrigger>
-          <SelectContent className="bg-zinc-800 text-white border-zinc-700">
-            <SelectItem value="en">English</SelectItem>
-            <SelectItem value="es">Español</SelectItem>
-            <SelectItem value="fr">Français</SelectItem>
-            <SelectItem value="de">Deutsch</SelectItem>
-          </SelectContent>
-        </Select>
       </div>
     </header>
   );

@@ -34,6 +34,7 @@ async function initMeili() {
     "region",
     "tags",
     "genre",
+    "is_non_game",
   ]);
 
   await index.updateSortableAttributes(["rating", "release_date"]);

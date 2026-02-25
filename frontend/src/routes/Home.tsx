@@ -46,7 +46,11 @@ export default function Home({ appName }: HomeProps) {
     }
 
     setLoading(true);
-    fetch(`/api/search?q=${debouncedQuery}&limit=100`)
+    const includeNonGames =
+      localStorage.getItem("include_non_games") !== "false";
+    fetch(
+      `/api/search?q=${debouncedQuery}&limit=100&include_non_games=${includeNonGames}`,
+    )
       .then((res) => res.json())
       .then((data) => {
         setGames(data.results || []);

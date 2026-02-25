@@ -19,6 +19,9 @@ router.get("/", async function (req, res) {
   if (req.query.genre) {
     filters.push(`genre = "${req.query.genre}"`);
   }
+  if (req.query.include_non_games === "false") {
+    filters.push(`is_non_game != true`);
+  }
 
   try {
     const client = getMeiliClient();

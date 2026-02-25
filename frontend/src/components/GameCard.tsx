@@ -1,6 +1,14 @@
 import { motion, AnimatePresence } from "framer-motion";
 import { useState, useEffect } from "react";
-import { X, Globe, FlaskConical, Flag, Calendar, FileText, HardDrive } from "lucide-react";
+import {
+  X,
+  Globe,
+  FlaskConical,
+  Flag,
+  Calendar,
+  FileText,
+  HardDrive,
+} from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
 // Cache to prevent multiple fetches across GameCard instances
@@ -12,7 +20,7 @@ export interface Game {
   release_date: string;
   images: string[] | null;
   region?: string;
-  videogame?: string; // Platform
+  platform?: string;
   filename?: string;
   size?: string;
   download_url?: string;
@@ -49,9 +57,13 @@ export function GameCard({ games }: GameCardProps) {
 
   const count = games.length;
   const hasMultipleVersions = count > 1;
-  const showRegion = hasMultipleVersions && games.some(g => g.region !== games[0].region);
-  const showDate = hasMultipleVersions && games.some(g => g.release_date !== games[0].release_date);
-  const showSize = hasMultipleVersions && games.some(g => g.size !== games[0].size);
+  const showRegion =
+    hasMultipleVersions && games.some((g) => g.region !== games[0].region);
+  const showDate =
+    hasMultipleVersions &&
+    games.some((g) => g.release_date !== games[0].release_date);
+  const showSize =
+    hasMultipleVersions && games.some((g) => g.size !== games[0].size);
 
   const renderRegion = (region?: string) => {
     if (!region) return null;
@@ -65,15 +77,22 @@ export function GameCard({ games }: GameCardProps) {
     else if (r.startsWith("JPN") || r.startsWith("JAP")) flagCode = "jp";
     else if (r === "KOR" || r === "KOREA") flagCode = "kr";
     else if (r === "CHN" || r === "CHINA") flagCode = "cn";
-    else if (r === "WLD" || r === "WORLD") icon = <Globe className="w-3.5 h-3.5" />;
+    else if (r === "WLD" || r === "WORLD")
+      icon = <Globe className="w-3.5 h-3.5" />;
     else if (r === "BETA") icon = <FlaskConical className="w-3.5 h-3.5" />;
 
     return (
       <span className="flex items-center gap-1.5 uppercase leading-none">
         {flagCode ? (
-          <img src={`https://flagcdn.com/w20/${flagCode}.png`} alt={r} className="w-[16px] h-[11px] object-cover rounded-[2px] shadow-sm" />
+          <img
+            src={`https://flagcdn.com/w20/${flagCode}.png`}
+            alt={r}
+            className="w-[16px] h-[11px] object-cover rounded-[2px] shadow-sm"
+          />
         ) : (
-          <span className="flex items-center justify-center">{icon || <Flag className="w-3.5 h-3.5" />}</span>
+          <span className="flex items-center justify-center">
+            {icon || <Flag className="w-3.5 h-3.5" />}
+          </span>
         )}
         <span>{r === "BETA" ? "Beta" : region}</span>
       </span>
@@ -111,13 +130,20 @@ export function GameCard({ games }: GameCardProps) {
 
         {/* Main Card */}
         <div className="relative flex w-full flex-col overflow-hidden rounded-md border-4 border-black bg-zinc-800 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] transition-transform hover:-translate-y-1 hover:shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] z-10">
-          <div className="aspect-[2/3] w-full overflow-hidden bg-zinc-900">
+          <div className="relative aspect-[2/3] w-full overflow-hidden bg-zinc-900">
             <img
               src={image}
               alt={mainGame.game_name}
               className="h-full w-full object-cover"
               loading="lazy"
             />
+            {mainGame.platform && (
+              <div className="absolute inset-x-0 bottom-0 bg-black/75 p-1 text-center">
+                <span className="text-[9px] font-bold text-white uppercase break-words leading-tight">
+                  {mainGame.platform}
+                </span>
+              </div>
+            )}
           </div>
 
           <div className="flex flex-col p-3">
@@ -166,9 +192,7 @@ export function GameCard({ games }: GameCardProps) {
                     }}
                     className="min-w-[200px] max-w-[220px] flex-shrink-0 flex flex-col overflow-hidden rounded-md border-4 border-black bg-zinc-800 shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] cursor-pointer hover:shadow-[12px_12px_0px_0px_rgba(0,0,0,1)] hover:-translate-y-1 transition-all"
                   >
-                    <div
-                      className="aspect-[2/3] w-full overflow-hidden bg-zinc-900 relative group/img"
-                    >
+                    <div className="aspect-[2/3] w-full overflow-hidden bg-zinc-900 relative group/img">
                       <img
                         src={
                           game.images && game.images.length > 0
@@ -185,38 +209,53 @@ export function GameCard({ games }: GameCardProps) {
                       </h3>
                       <div className="flex flex-wrap gap-2">
                         {showRegion && game.region && (
-                          <span className="inline-flex items-center px-2 py-1 bg-white text-black text-[13px] rounded-sm font-bold border-2 border-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]" title="Region">
+                          <span
+                            className="inline-flex items-center px-2 py-1 bg-white text-black text-[13px] rounded-sm font-bold border-2 border-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]"
+                            title="Region"
+                          >
                             {renderRegion(game.region)}
                           </span>
                         )}
                         {showDate && game.release_date && (
-                          <span className="inline-flex items-center gap-1.5 px-2 py-1 bg-[#ff5e5e] text-black text-[13px] rounded-sm font-bold border-2 border-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]" title="Release Date">
-                            <Calendar className="w-4 h-4 shrink-0" /> {game.release_date}
+                          <span
+                            className="inline-flex items-center gap-1.5 px-2 py-1 bg-[#ff5e5e] text-black text-[13px] rounded-sm font-bold border-2 border-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]"
+                            title="Release Date"
+                          >
+                            <Calendar className="w-4 h-4 shrink-0" />{" "}
+                            {game.release_date}
                           </span>
                         )}
                         {showSize && game.size && (
-                          <span className="inline-flex items-center gap-1.5 px-2 py-1 bg-[#a855f7] text-white text-[13px] rounded-sm font-bold border-2 border-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]" title="File Size">
-                            <HardDrive className="w-4 h-4 shrink-0" /> {game.size}
+                          <span
+                            className="inline-flex items-center gap-1.5 px-2 py-1 bg-[#a855f7] text-white text-[13px] rounded-sm font-bold border-2 border-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]"
+                            title="File Size"
+                          >
+                            <HardDrive className="w-4 h-4 shrink-0" />{" "}
+                            {game.size}
                           </span>
                         )}
                         {game.filename && (
                           <span
                             className="inline-flex w-full items-start gap-1.5 px-2 py-1 bg-white text-black text-[11px] rounded-sm font-bold border-2 border-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] break-all whitespace-normal text-left leading-tight"
-                            title="Filename">
+                            title="Filename"
+                          >
                             <FileText className="w-3.5 h-3.5 shrink-0 mt-[1px]" />
                             <span>{game.filename}</span>
                           </span>
                         )}
-                        {game.videogame && (
-                          <span className="inline-flex w-full items-center justify-center gap-2 px-3 py-2 mt-1 bg-[#FFD700] text-black text-[14px] rounded-sm font-black uppercase border-2 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]" title="Platform">
-                            {consoleIcons[game.videogame] && (
+                        {game.platform && (
+                          <span
+                            className="inline-flex w-full items-center justify-center gap-2 px-3 py-2 mt-1 bg-[#FFD700] text-black text-[14px] rounded-sm font-black uppercase border-2 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]"
+                            title="Platform"
+                          >
+                            {consoleIcons[game.platform] && (
                               <img
-                                src={`/api/proxy-assets?url=${encodeURIComponent(consoleIcons[game.videogame])}`}
-                                alt={game.videogame}
+                                src={`/api/proxy-assets?url=${encodeURIComponent(consoleIcons[game.platform])}`}
+                                alt={game.platform}
                                 className="h-5 w-5 object-contain drop-shadow-md"
                               />
                             )}
-                            {game.videogame}
+                            {game.platform}
                           </span>
                         )}
                       </div>
@@ -234,7 +273,6 @@ export function GameCard({ games }: GameCardProps) {
             </div>
           </div>
         )}
-
       </AnimatePresence>
     </>
   );

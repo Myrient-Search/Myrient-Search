@@ -21,7 +21,7 @@ import { Footer } from "@/components/Footer";
 export interface Game {
   id: string;
   game_name: string;
-  videogame: string;
+  platform: string;
   rating: number;
   developer: string;
   publisher: string;
@@ -174,9 +174,9 @@ export default function GameOverview({ appName }: { appName: string }) {
                   {game.region}
                 </span>
               )}
-              {game.videogame && (
+              {game.platform && (
                 <span className="border-2 border-black bg-white px-3 py-1 text-black font-bold uppercase shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]">
-                  {game.videogame}
+                  {game.platform}
                 </span>
               )}
             </div>
@@ -196,11 +196,7 @@ export default function GameOverview({ appName }: { appName: string }) {
               <Button
                 onClick={() => {
                   if (game.download_url) {
-                    window.open(
-                      `/api/proxy-download?url=${encodeURIComponent(game.download_url)}`,
-                      "_blank",
-                      "noreferrer",
-                    );
+                    window.location.href = `/api/proxy-download?url=${encodeURIComponent(game.download_url)}`;
                   }
                 }}
                 disabled={!game.download_url}
@@ -259,7 +255,7 @@ export default function GameOverview({ appName }: { appName: string }) {
                   Platform
                 </h3>
                 <p className="font-bold text-black text-sm uppercase">
-                  {game.videogame || "N/A"}
+                  {game.platform || "N/A"}
                 </p>
               </div>
             </div>
