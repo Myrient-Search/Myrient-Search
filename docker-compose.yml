@@ -1,6 +1,6 @@
 services:
   myrient-frontend:
-    build: ./frontend
+    image: ghcr.io/myrient-search/myrient-frontend:latest
     container_name: myrient-frontend
     restart: unless-stopped
     ports:
@@ -11,19 +11,19 @@ services:
       - myrient
 
   myrient-backend:
-    build: ./backend
+    image: ghcr.io/myrient-search/myrient-backend:latest
     container_name: myrient-backend
     restart: unless-stopped
     environment:
       - APPLICATION_NAME=${APPLICATION_NAME}
       - TWITCH_CLIENT_ID=${TWITCH_CLIENT_ID}
       - TWITCH_CLIENT_SECRET=${TWITCH_CLIENT_SECRET}
-      - POSTGRES_HOST=postgres
-      - POSTGRES_PORT=${POSTGRES_PORT}
+      - POSTGRES_HOST=myrient-postgres
+      - POSTGRES_PORT=5432
       - POSTGRES_DB=${POSTGRES_DB}
       - POSTGRES_USER=${POSTGRES_USER}
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
-      - MEILI_HOST=http://meilisearch:7700
+      - MEILI_HOST=http://myrient-meilisearch:7700
       - MEILI_MASTER_KEY=${MEILI_MASTER_KEY}
       - ADMIN_KEY=${ADMIN_KEY}
       - AI_ENABLED=${AI_ENABLED}
