@@ -83,7 +83,46 @@ function usePersistKey() {
   return [key, save, clear] as const;
 }
 
+function isLocalNetwork(hostname = window.location.hostname) {
+  return (
+    hostname === "localhost" ||
+    hostname.endsWith(".local") ||
+    hostname === "127.0.0.1" ||
+    hostname === "::1" ||
+    !!hostname.match(
+      /^(::ffff:)?(192\.168\.|10\.|172\.(1[6-9]|2[0-9]|3[0-1])\.)/,
+    )
+  );
+}
+
 export default function Admin({ appName }: AdminProps) {
+  if (
+    typeof window !== "undefined" &&
+    window.location.protocol === "http:" &&
+    !isLocalNetwork()
+  ) {
+    return (
+      <div className="flex min-h-screen flex-col bg-zinc-900 text-white">
+        <Header appName={appName} />
+        <main className="mx-auto w-full max-w-4xl flex-1 px-4 pt-24 pb-10 flex flex-col items-center">
+          <div className="rounded-lg border border-red-900/50 bg-red-950/20 p-8 text-center max-w-lg mt-12">
+            <h2 className="text-2xl font-bold mb-3 text-red-500">
+              HTTPS Required
+            </h2>
+            <p className="text-red-200/70 text-sm">
+              Access to the admin panel over an unencrypted HTTP connection is
+              blocked to prevent credential leakage.
+            </p>
+            <p className="text-red-200/70 text-sm mt-2">
+              Use HTTPS or connect via a local network address.
+            </p>
+          </div>
+        </main>
+        <Footer />
+      </div>
+    );
+  }
+
   const [adminKey, setAdminKey, clearKey] = usePersistKey();
   const [inputKey, setInputKey] = useState(adminKey);
   const [authed, setAuthed] = useState(false);
