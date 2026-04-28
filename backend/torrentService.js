@@ -1,4 +1,8 @@
+// HTTPS first — they're TCP, don't churn dgram sockets, and resolve cleanly
+// even when the host's UDP egress / DNS is flaky. UDP trackers as fallback.
 const MINERVA_TRACKERS = [
+  "https://tracker.gbitt.info:443/announce",
+  "https://1337.abcvg.info:443/announce",
   "udp://tracker.opentrackr.org:1337/announce",
   "udp://tracker.openbittorrent.com:6969/announce",
   "udp://exodus.desync.com:6969/announce",
@@ -15,8 +19,6 @@ const MINERVA_TRACKERS = [
   "udp://moonburrow.club:6969/announce",
   "udp://bt1.archive.org:6969/announce",
   "udp://bt.ktrackers.com:6666/announce",
-  "https://tracker.gbitt.info:443/announce",
-  "https://1337.abcvg.info:443/announce",
 ];
 
 // Browsers can only reach wss:// trackers; the rest are server-only.
@@ -48,6 +50,16 @@ async function getClient() {
     const WebTorrent = mod.default || mod;
     _client = new WebTorrent({
       maxConns: parseInt(process.env.TORRENT_MAX_CONNS || "100", 10),
+      // DHT and uTP open many native UDP sockets and were the source of
+      // SIGSEGV crashes on the previous Alpine/musl build. We rely on the
+      // tracker list in MINERVA_TRACKERS for peer discovery; HTTPS trackers
+      // first, then UDP. Disable here to keep the surface small even on
+      // glibc.
+      dht: false,
+      lsd: false,
+      natUpnp: false,
+      natPmp: false,
+      utPex: true,
     });
     _client.on("error", (err) => {
       console.error("[torrent] client error:", err.message || err);
