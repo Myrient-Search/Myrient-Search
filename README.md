@@ -1,9 +1,9 @@
 <p align="center">
-  <img src="assets/logo/myrient_temp_logo.png" alt="Myrient Search logo" width="200"
+  <img src="assets/logo/myrient_temp_logo.png" alt="Minerva Search logo" width="200"
   style = "border-radius: 30%;"/>
 </p>
 
-<h1 align="center">Myrient Search</h1>
+<h1 align="center">Minerva Search</h1>
 
 <p align="center">
   <strong>Remember the game? We'll handle the rest</strong>
@@ -29,9 +29,9 @@
 
 ## About
 
-**Myrient Search** is a self-hosted game search engine that allows you to search for games across the Myrient Erista database.
+**Minerva Search** is a self-hosted game search engine that allows you to search for games across the Myrient Erista database.
 
-This is a full rewrite of the original Myrient Search project, with better UI and performance.
+This is a full rewrite of the original Minerva Search project, with better UI and performance.
 
 ## Features
 
@@ -43,7 +43,7 @@ This is a full rewrite of the original Myrient Search project, with better UI an
 
 ## Prerequisites
 
-To use Myrient Search, you'll need:
+To use Minerva Search, you'll need:
 - A Twitch Application (https://dev.twitch.tv/console) to get a Client ID and Client Secret (optional)
 - An OpenAI-compatible API key (We recommend using Google Gemini) (optional)
 
@@ -105,4 +105,4 @@ See the [LICENSE](LICENSE) file for details.
 
 ## Disclaimer
 
-Myrient Search has no affiliation or endorsement from Myrient, IGDB, or any other entity. The developers cannot be held responsible for any misuse of this software. This software does not host any ROMs, games, or any copyrighted content. It is purely a tool for searching and downloading ROMs from remote servers.
+Minerva Search has no affiliation or endorsement from Myrient, IGDB, or any other entity. The developers cannot be held responsible for any misuse of this software. This software does not host any ROMs, games, or any copyrighted content. It is purely a tool for searching and downloading ROMs from remote servers.

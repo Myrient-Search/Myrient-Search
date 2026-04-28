@@ -17,6 +17,9 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
+import { DownloadDialog } from "@/components/DownloadDialog";
+import { useGameDownload } from "@/hooks/useGameDownload";
+import { isP2PEnabled } from "@/lib/geo";
 
 export interface Game {
   id: string;
@@ -34,6 +37,8 @@ export interface Game {
   upload_date: string;
   description: string;
   download_url?: string;
+  magnet?: string;
+  so_id?: number | null;
   images: string[] | null;
   videos: string[] | null;
 }
@@ -47,6 +52,13 @@ export default function GameOverview({ appName }: { appName: string }) {
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
   const [lightboxDirection, setLightboxDirection] = useState(0);
   const [compatibleSystems, setCompatibleSystems] = useState<string[]>([]);
+  const [downloadOpen, setDownloadOpen] = useState(false);
+  const downloadCtl = useGameDownload({
+    gameId: game?.id,
+    filename: game?.filename,
+    magnet: game?.magnet,
+    soId: game?.so_id,
+  });
 
   const openLightbox = (index: number) => {
     setLightboxDirection(0);
@@ -79,13 +91,15 @@ export default function GameOverview({ appName }: { appName: string }) {
       .then((data) => {
         setGame(data);
         setLoading(false);
+        if (data?.id && data?.magnet) {
+          fetch(`/api/games/${data.id}/warm`, { method: "POST" }).catch(() => {});
+        }
       })
       .catch((err) => {
         setError(err.message);
         setLoading(false);
       });
 
-    // Fetch compatible systems for the play button
     fetch("/api/emulator/systems")
       .then((res) => res.json())
       .then((data) => {
@@ -209,11 +223,16 @@ export default function GameOverview({ appName }: { appName: string }) {
 
               <Button
                 onClick={() => {
-                  if (game.download_url) {
-                    window.location.href = `/api/proxy-download?url=${encodeURIComponent(game.download_url)}`;
-                  }
+                  if (!game.magnet) return;
+                  setDownloadOpen(true);
+                  downloadCtl.start();
                 }}
-                disabled={!game.download_url}
+                disabled={!game.magnet}
+                title={
+                  isP2PEnabled()
+                    ? "Browser Mode — streams from BitTorrent peers in your browser"
+                    : "Normal Mode — streams via this server"
+                }
                 className="w-full border-4 border-black bg-[#FFD700] text-black hover:bg-[#ffc800] shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] hover:translate-y-1 hover:translate-x-1 hover:shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] transition-all flex flex-col items-center justify-center p-3 gap-2 h-auto disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 <span className="text-2xl font-black uppercase tracking-widest leading-none mt-1">
@@ -434,6 +453,18 @@ export default function GameOverview({ appName }: { appName: string }) {
           </div>
         )}
       </AnimatePresence>
+
+      <DownloadDialog
+        open={downloadOpen}
+        state={downloadCtl.state}
+        filename={game.filename}
+        onCancel={() => downloadCtl.cancel()}
+        onSwitchToNormal={() => downloadCtl.switchToNormal()}
+        onClose={() => {
+          setDownloadOpen(false);
+          downloadCtl.reset();
+        }}
+      />
 
       <Button
         variant="default"

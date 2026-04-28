@@ -8,7 +8,6 @@ router.get("/", async function (req, res) {
   const page = Math.max(parseInt(req.query.page) || 1, 1);
   const limit = Math.min(parseInt(req.query.limit) || 100, 1000);
 
-  // Build Meilisearch filter string from optional query params
   const filters = [];
   if (req.query.platform) {
     filters.push(`platform = "${req.query.platform}"`);
@@ -35,11 +34,14 @@ router.get("/", async function (req, res) {
         "id",
         "game_name",
         "filename",
+        "full_path",
         "platform",
         "group_name",
         "region",
         "size",
-        "download_url",
+        "size_bytes",
+        "magnet",
+        "so_id",
         "tags",
         "description",
         "rating",
@@ -50,6 +52,10 @@ router.get("/", async function (req, res) {
         "images",
       ],
     });
+
+    for (const hit of searchResult.hits) {
+      hit.download_url = hit.magnet ? `/api/proxy-download?id=${hit.id}` : null;
+    }
 
     if (q) logSearch(q, searchResult.estimatedTotalHits || 0);
 

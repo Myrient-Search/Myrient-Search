@@ -8,7 +8,16 @@ export default defineConfig({
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./src"),
+      // The webtorrent CJS entry pulls in Node-only deps that don't bundle
+      // cleanly under Vite/Rollup; alias to the prebuilt browser bundle.
+      webtorrent: path.resolve(
+        __dirname,
+        "./node_modules/webtorrent/dist/webtorrent.min.js",
+      ),
     },
+  },
+  optimizeDeps: {
+    exclude: ["webtorrent"],
   },
   server: {
     proxy: {

@@ -1,28 +1,23 @@
-/**
- * pipeline.js — Unified high-performance scrape + enrich + index pipeline.
- *
- * Key perf features:
- *  • 20 parallel HTTP crawlers (Promise pool) — main throughput win
- *  • 500-game batched DB upserts with RETURNING id — no per-game round trips
- *  • 4 parallel IGDB enrich workers (saturates 4 r/s limit)
- *  • 100-doc batched Meilisearch addDocuments per enrich batch
- *  • HTTP keep-alive agent — reuse TCP connections to Myrient
- *  • Stop support via pipelineState.cancelled flag
- */
-
 const path = require("path");
 require("dotenv").config({ path: path.resolve(__dirname, "../.env") });
 require("dotenv").config();
 
-const http = require("http");
+const fs = require("fs");
 const https = require("https");
+const http = require("http");
 const axios = require("axios");
-const cheerio = require("cheerio");
+const Database = require("better-sqlite3");
 const { pool, query, initDb } = require("./db");
 const { getMeiliClient, initMeili, INDEX_NAME } = require("./meili");
 const nonGameTermsData = require("./data/nonGameTerms.json");
 const nonGameTerms = nonGameTermsData.terms.map((t) => t.toLowerCase());
 const catList = require("./data/categories.json");
+
+const MINERVA_HOST = process.env.MINERVA_HOST || "https://minerva-archive.org";
+const HASHES_DB_URL = `${MINERVA_HOST}/assets/hashes.db`;
+const CACHE_DIR = process.env.MINERVA_CACHE_DIR || "/tmp/minerva-cache";
+const HASHES_DB_PATH = path.join(CACHE_DIR, "hashes.db");
+const HASHES_DB_META_PATH = path.join(CACHE_DIR, "hashes.db.meta.json");
 
 function findCategory(str, catList) {
   let lowerStr = str.toLowerCase();
@@ -40,7 +35,7 @@ function findCategory(str, catList) {
   }
   if (foundCat) {
     for (let subCat in catList.Categories[foundCat]) {
-      let subCatString = catList.Categories[foundCat][subCat]; //I will go insane if this is inlined repeatedly
+      let subCatString = catList.Categories[foundCat][subCat];
       if (lowerStr.includes(subCatString.toLowerCase())) {
         if (subCatString.length > subCatLength) {
           foundSubCat = subCatString;
@@ -62,70 +57,41 @@ function findCategory(str, catList) {
       foundCat = "Others";
     }
   }
-  //special fix ups
   for (let cat in catList.Special) {
     let specialString = catList.Special[cat];
-    if (foundCat == cat) {
-      foundCat = specialString;
-    }
-    if (foundSubCat == cat) {
-      foundSubCat = specialString;
-    }
-    if (foundCat == "Others") {
-      if (lowerStr.includes(cat.toLowerCase())) {
-        foundCat == specialString;
-      }
-    }
+    if (foundCat == cat) foundCat = specialString;
+    if (foundSubCat == cat) foundSubCat = specialString;
   }
-  if (foundSubCat.includes(foundCat)) {
-    foundCat = "";
-  }
-  return {
-    cat: foundCat,
-    subCat: foundSubCat,
-  };
+  if (foundSubCat.includes(foundCat)) foundCat = "";
+  return { cat: foundCat, subCat: foundSubCat };
 }
 
 function isGameForIGDB(filename) {
   if (!filename) return false;
   const lowerFileName = filename.toLowerCase();
   return !nonGameTerms.some((term) => {
-    // Treat as non-game if the term is the extension
     if (lowerFileName.endsWith(`.${term}`)) return true;
-    // Or if it appears in metadata tags like (Manual) or [Update]
     if (
       lowerFileName.includes(`(${term})`) ||
       lowerFileName.includes(`[${term}]`)
     )
       return true;
-    // Or if the filename ends with " term"
     if (lowerFileName.endsWith(` ${term}`)) return true;
     return false;
   });
 }
 
-// ── Tuning constants ──────────────────────────────────────────────────────────
-const MYRIENT_URL = "https://myrient.erista.me/files/";
-const CRAWL_CONCURRENCY = 20; // parallel HTTP fetches to Myrient
-const DB_BATCH_SIZE = 500; // games per batch INSERT
-const MEILI_BATCH_SIZE = 100; // docs per Meilisearch addDocuments call
-const IGDB_BATCH_SIZE = 10; // games per IGDB multiquery
-const IGDB_WORKERS = 4; // parallel IGDB workers (saturates 4 r/s)
-const IGDB_WORKER_DELAY = 1000; // ms per worker between requests (4×1000=4r/s total)
+const DB_BATCH_SIZE = 500;
+const MEILI_BATCH_SIZE = 100;
+const IGDB_BATCH_SIZE = 10;
+const IGDB_WORKERS = 4;
+const IGDB_WORKER_DELAY = 1000;
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
-// ── Keep-alive HTTP agent — reuse TCP connections ─────────────────────────────
-const httpAgent = new http.Agent({
-  keepAlive: true,
-  maxSockets: CRAWL_CONCURRENCY + 5,
-});
-const httpsAgent = new https.Agent({
-  keepAlive: true,
-  maxSockets: CRAWL_CONCURRENCY + 5,
-});
-const ax = axios.create({ httpAgent, httpsAgent, timeout: 30_000 });
+const httpAgent = new http.Agent({ keepAlive: true });
+const httpsAgent = new https.Agent({ keepAlive: true });
+const ax = axios.create({ httpAgent, httpsAgent, timeout: 600_000 });
 
-// ── Global pipeline state (exported for admin polling) ────────────────────────
 const pipelineState = {
   status: "idle",
   mode: null,
@@ -165,60 +131,12 @@ function resetState(mode) {
   });
 }
 
-// ── Filename parser ───────────────────────────────────────────────────────────
 const REGIONS = new Set([
-  "usa",
-  "japan",
-  "europe",
-  "world",
-  "asia",
-  "australia",
-  "brazil",
-  "canada",
-  "china",
-  "denmark",
-  "finland",
-  "france",
-  "germany",
-  "greece",
-  "hong kong",
-  "israel",
-  "italy",
-  "korea",
-  "netherlands",
-  "norway",
-  "poland",
-  "portugal",
-  "russia",
-  "spain",
-  "sweden",
-  "taiwan",
-  "uk",
+  "usa", "japan", "europe", "world", "asia", "australia", "brazil",
+  "canada", "china", "denmark", "finland", "france", "germany", "greece",
+  "hong kong", "israel", "italy", "korea", "netherlands", "norway",
+  "poland", "portugal", "russia", "spain", "sweden", "taiwan", "uk",
   "united kingdom",
-]);
-const LANGS = new Set([
-  "en",
-  "ja",
-  "fr",
-  "de",
-  "es",
-  "it",
-  "nl",
-  "pt",
-  "sv",
-  "no",
-  "da",
-  "fi",
-  "zh",
-  "ko",
-  "pl",
-  "ru",
-  "he",
-  "ca",
-  "ar",
-  "tr",
-  "zh-hant",
-  "zh-hans",
 ]);
 
 function parseFilename(filename) {
@@ -240,37 +158,159 @@ function parseFilename(filename) {
   return { base_name, tags, region };
 }
 
-// ── Batch DB upsert — returns rows with {id, game_name, description} ──────────
+function parsePath(fullPath) {
+  const trimmed = fullPath.replace(/^\.\//, "");
+  const segments = trimmed.split("/");
+  const filename = segments.pop() || trimmed;
+  const group = segments[0] || "";
+  // Skip tag-like folders ("!EXTRAS", "[BIOS]") when picking the platform.
+  let platformRaw = segments[1] || group;
+  for (let i = 1; i < segments.length; i++) {
+    if (!segments[i].startsWith("!") && !segments[i].startsWith("[")) {
+      platformRaw = segments[i];
+      break;
+    }
+  }
+  let platform = platformRaw;
+  const platformMatch = findCategory(platformRaw, catList);
+  if (platformMatch.cat && platformMatch.subCat) {
+    platform = `${platformMatch.cat} - ${platformMatch.subCat}`;
+  } else if (platformMatch.subCat) {
+    platform = platformMatch.subCat;
+  } else if (platformMatch.cat) {
+    platform = platformMatch.cat;
+  }
+  return { filename, group, platform };
+}
+
+function formatBytes(bytes) {
+  if (!bytes || bytes <= 0) return "";
+  const units = ["B", "KiB", "MiB", "GiB", "TiB"];
+  let i = 0;
+  let n = Number(bytes);
+  while (n >= 1024 && i < units.length - 1) {
+    n /= 1024;
+    i++;
+  }
+  return `${n.toFixed(i === 0 ? 0 : 1)} ${units[i]}`;
+}
+
+async function ensureHashesDb() {
+  fs.mkdirSync(CACHE_DIR, { recursive: true });
+
+  let prevMeta = null;
+  try {
+    prevMeta = JSON.parse(fs.readFileSync(HASHES_DB_META_PATH, "utf8"));
+  } catch {}
+
+  let headRes;
+  try {
+    headRes = await ax.head(HASHES_DB_URL, { timeout: 30_000 });
+  } catch (err) {
+    log(`[hashes] HEAD failed (${err.message}) — using cached copy if any`);
+    if (fs.existsSync(HASHES_DB_PATH)) return HASHES_DB_PATH;
+    throw err;
+  }
+
+  const upstreamMeta = {
+    etag: headRes.headers["etag"] || null,
+    lastModified: headRes.headers["last-modified"] || null,
+    contentLength: parseInt(headRes.headers["content-length"] || "0", 10),
+  };
+
+  if (
+    fs.existsSync(HASHES_DB_PATH) &&
+    prevMeta &&
+    prevMeta.etag === upstreamMeta.etag &&
+    prevMeta.lastModified === upstreamMeta.lastModified &&
+    prevMeta.contentLength === upstreamMeta.contentLength
+  ) {
+    log(
+      `[hashes] cached copy is current (${formatBytes(upstreamMeta.contentLength)})`,
+    );
+    return HASHES_DB_PATH;
+  }
+
+  log(
+    `[hashes] downloading ${HASHES_DB_URL} (${formatBytes(upstreamMeta.contentLength)})`,
+  );
+  const tmpPath = HASHES_DB_PATH + ".part";
+  const writer = fs.createWriteStream(tmpPath);
+  const res = await ax.get(HASHES_DB_URL, { responseType: "stream" });
+
+  let downloaded = 0;
+  let lastReport = Date.now();
+  res.data.on("data", (chunk) => {
+    downloaded += chunk.length;
+    if (pipelineState.cancelled) {
+      res.data.destroy();
+      writer.destroy();
+      return;
+    }
+    if (Date.now() - lastReport > 5000 && upstreamMeta.contentLength) {
+      const pct = ((downloaded / upstreamMeta.contentLength) * 100).toFixed(1);
+      log(
+        `[hashes] ${pct}% (${formatBytes(downloaded)} / ${formatBytes(upstreamMeta.contentLength)})`,
+      );
+      lastReport = Date.now();
+    }
+  });
+
+  await new Promise((resolve, reject) => {
+    res.data.pipe(writer);
+    writer.on("finish", resolve);
+    writer.on("error", reject);
+    res.data.on("error", reject);
+  });
+
+  if (pipelineState.cancelled) {
+    try { fs.unlinkSync(tmpPath); } catch {}
+    throw new Error("Cancelled during hashes.db download");
+  }
+
+  fs.renameSync(tmpPath, HASHES_DB_PATH);
+  fs.writeFileSync(HASHES_DB_META_PATH, JSON.stringify(upstreamMeta, null, 2));
+  log(`[hashes] saved to ${HASHES_DB_PATH}`);
+  return HASHES_DB_PATH;
+}
+
+const UPSERT_COLS = [
+  "game_name", "filename", "full_path", "platform", "group_name", "region",
+  "size", "size_bytes", "magnet", "torrent_file", "so_id", "md5", "sha1",
+  "sha256", "crc32", "tags",
+];
+
 async function batchUpsert(games) {
   if (games.length === 0) return [];
   const values = [];
   const placeholders = games.map((g, idx) => {
-    const b = idx * 8;
+    const b = idx * UPSERT_COLS.length;
     values.push(
-      g.game_name,
-      g.filename,
-      g.platform,
-      g.group_name,
-      g.region,
-      g.size,
-      g.download_url,
-      g.tags,
+      g.game_name, g.filename, g.full_path, g.platform, g.group_name, g.region,
+      g.size, g.size_bytes, g.magnet, g.torrent_file, g.so_id, g.md5, g.sha1,
+      g.sha256, g.crc32, g.tags,
     );
-    return `($${b + 1},$${b + 2},$${b + 3},$${b + 4},$${b + 5},$${b + 6},$${b + 7},$${b + 8}::TEXT[])`;
+    const params = UPSERT_COLS.map((_, i) => {
+      const ph = `$${b + i + 1}`;
+      if (UPSERT_COLS[i] === "tags") return `${ph}::TEXT[]`;
+      return ph;
+    });
+    return `(${params.join(",")})`;
   });
+  const updateSet = UPSERT_COLS
+    .filter((c) => c !== "full_path")
+    .map((c) => `${c}=EXCLUDED.${c}`)
+    .join(", ");
   const { rows } = await query(
-    `INSERT INTO games (game_name,filename,platform,group_name,region,size,download_url,tags)
+    `INSERT INTO games (${UPSERT_COLS.join(",")})
      VALUES ${placeholders.join(",")}
-     ON CONFLICT (download_url) DO UPDATE SET
-       game_name=EXCLUDED.game_name, platform=EXCLUDED.platform, group_name=EXCLUDED.group_name,
-       region=EXCLUDED.region, size=EXCLUDED.size, tags=EXCLUDED.tags
+     ON CONFLICT (full_path) DO UPDATE SET ${updateSet}
      RETURNING id, game_name, description, filename`,
     values,
   );
   return rows;
 }
 
-// ── Batch Meilisearch index ───────────────────────────────────────────────────
 async function batchIndexGames(rows) {
   if (!rows.length) return;
   try {
@@ -278,11 +318,15 @@ async function batchIndexGames(rows) {
       id: r.id,
       game_name: r.game_name,
       filename: r.filename,
+      full_path: r.full_path,
       platform: r.platform,
       group_name: r.group_name,
       region: r.region,
       size: r.size,
-      download_url: r.download_url,
+      size_bytes: r.size_bytes != null ? Number(r.size_bytes) : 0,
+      magnet: r.magnet || "",
+      torrent_file: r.torrent_file || "",
+      so_id: r.so_id != null ? r.so_id : null,
       tags: r.tags,
       description: r.description || null,
       rating: r.rating != null ? parseFloat(r.rating) : null,
@@ -306,7 +350,6 @@ async function batchIndexGames(rows) {
   }
 }
 
-// ── IGDB helpers ──────────────────────────────────────────────────────────────
 async function getIGDBToken() {
   const res = await fetch(
     `https://id.twitch.tv/oauth2/token?client_id=${process.env.TWITCH_CLIENT_ID}&client_secret=${process.env.TWITCH_CLIENT_SECRET}&grant_type=client_credentials`,
@@ -364,7 +407,6 @@ function extractIGDB(d) {
   return u;
 }
 
-// ── Enrich worker — one of IGDB_WORKERS running concurrently ─────────────────
 async function enrichWorker(enrichQueue, token, workerDelay) {
   await sleep(workerDelay);
   while (!pipelineState.cancelled) {
@@ -381,7 +423,6 @@ async function enrichWorker(enrichQueue, token, workerDelay) {
     const batch = enrichQueue.splice(0, IGDB_BATCH_SIZE);
     pipelineState.queueSize = enrichQueue.length;
 
-    // Single IGDB call for the whole batch
     const raw = await igdbBatch(token, batch);
     const resultMap = {};
     if (Array.isArray(raw)) {
@@ -391,15 +432,14 @@ async function enrichWorker(enrichQueue, token, workerDelay) {
       }
     }
 
-    // Parallel DB updates — use RETURNING * to avoid a second SELECT per game
     const updatedRows = await Promise.all(
       batch.map(async (game, i) => {
         const igdbHit = resultMap[i];
         const upd = igdbHit ? extractIGDB(igdbHit) : {};
-        upd.description = upd.description || ""; // mark enriched even on miss
+        upd.description = upd.description || "";
 
-        const sets = [],
-          params = [];
+        const sets = [];
+        const params = [];
         let pi = 1;
         for (const [k, v] of Object.entries(upd)) {
           if (k === "images") {
@@ -422,24 +462,30 @@ async function enrichWorker(enrichQueue, token, workerDelay) {
       }),
     );
 
-    // Single batched Meilisearch call for the whole IGDB batch
     await batchIndexGames(updatedRows.filter(Boolean));
     await sleep(IGDB_WORKER_DELAY);
   }
 }
 
-// ── High-performance parallel crawler ────────────────────────────────────────
-async function crawl({ mode, enrichQueue }) {
-  const visited = new Set();
-  const urlQueue = [MYRIENT_URL];
-  const running = new Set();
-  const gameBuffer = [];
-  const seenUrls = new Set();
+async function ingest({ mode, enrichQueue }) {
+  const dbPath = await ensureHashesDb();
+  log(`[hashes] opening SQLite database at ${dbPath}`);
 
-  // Flush buffer → batch DB insert → push IDs to enrich queue
+  const db = new Database(dbPath, { readonly: true, fileMustExist: true });
+  db.pragma("journal_mode = OFF");
+  db.pragma("temp_store = MEMORY");
+
+  const totalRow = db.prepare("SELECT COUNT(*) AS n FROM files").get();
+  const totalFiles = totalRow?.n || 0;
+  log(`[hashes] ${totalFiles.toLocaleString()} files in catalog`);
+
+  const seenPaths = new Set();
+  const buffer = [];
+
   async function flushBuffer(force = false) {
-    while (gameBuffer.length >= (force ? 1 : DB_BATCH_SIZE)) {
-      const chunk = gameBuffer.splice(0, DB_BATCH_SIZE);
+    while (buffer.length >= (force ? 1 : DB_BATCH_SIZE)) {
+      if (pipelineState.cancelled) return;
+      const chunk = buffer.splice(0, DB_BATCH_SIZE);
       const rows = await batchUpsert(chunk).catch((err) => {
         log(`DB batch error: ${err.message}`);
         return [];
@@ -449,7 +495,6 @@ async function crawl({ mode, enrichQueue }) {
       const toEnrich = [];
       const alreadyEnrichedIds = [];
       for (const row of rows) {
-        // Only enrich if it's missing description AND it appears to be an actual game
         if (
           (mode === "clean" || !row.description) &&
           isGameForIGDB(row.filename)
@@ -457,13 +502,10 @@ async function crawl({ mode, enrichQueue }) {
           toEnrich.push({ id: row.id, game_name: row.game_name });
         else alreadyEnrichedIds.push(row.id);
       }
-      // Push new games to enrich queue
       for (const g of toEnrich) {
         enrichQueue.push(g);
         pipelineState.queueSize = enrichQueue.length;
       }
-
-      // Re-index already-enriched games in one batch SELECT + one Meilisearch call
       if (alreadyEnrichedIds.length) {
         const { rows: full } = await query(
           "SELECT * FROM games WHERE id = ANY($1::INT[])",
@@ -474,109 +516,84 @@ async function crawl({ mode, enrichQueue }) {
     }
   }
 
-  // Process a single directory/page
-  async function processUrl(url) {
-    if (pipelineState.cancelled) return;
-    try {
-      const { data: html } = await ax.get(url);
-      const $ = cheerio.load(html);
-      const pathSegs = new URL(url).pathname
-        .split("/")
-        .filter((p) => p && p !== "files");
-      const group = pathSegs[0] ? decodeURIComponent(pathSegs[0]) : "";
-      let platform = pathSegs[1] ? decodeURIComponent(pathSegs[1]) : group;
-
-      if (platform) {
-        const platformMatch = findCategory(platform, catList);
-        if (platformMatch.cat && platformMatch.subCat) {
-          platform = `${platformMatch.cat} - ${platformMatch.subCat}`;
-        } else if (platformMatch.subCat) {
-          platform = platformMatch.subCat;
-        } else if (platformMatch.cat) {
-          platform = platformMatch.cat;
-        }
-      }
-
-      $("a").each((_, el) => {
-        const href = $(el).attr("href");
-        if (
-          !href ||
-          href.startsWith("?") ||
-          /^[a-z]+:/.test(href) ||
-          href.startsWith("/") ||
-          href.includes("..") ||
-          href === "./"
-        )
-          return;
-        const absUrl = new URL(href, url).toString();
-        if (href.endsWith("/")) {
-          if (!visited.has(absUrl)) urlQueue.push(absUrl);
-        } else {
-          const filename = decodeURIComponent(href);
-          const { base_name, tags, region } = parseFilename(filename);
-          const size = $(el).closest("tr").find("td.size").text().trim();
-          seenUrls.add(absUrl);
-          pipelineState.scrapeTotal++;
-          gameBuffer.push({
-            game_name: base_name,
-            filename,
-            platform,
-            group_name: group,
-            region,
-            size: size && size !== "-" ? size : "",
-            download_url: absUrl,
-            tags,
-          });
-        }
-      });
-
-      // Flush if buffer is large enough (non-blocking — fire and forget within event loop)
-      if (gameBuffer.length >= DB_BATCH_SIZE) await flushBuffer();
-    } catch (err) {
-      if (!pipelineState.cancelled)
-        log(`ERR ${url.slice(0, 80)}: ${err.message}`);
-    }
-  }
-
-  // Promise-pool crawler: keep CRAWL_CONCURRENCY tasks running at all times
-  while (
-    (urlQueue.length > 0 || running.size > 0) &&
-    !pipelineState.cancelled
-  ) {
-    while (urlQueue.length > 0 && running.size < CRAWL_CONCURRENCY) {
-      const url = urlQueue.shift();
-      if (visited.has(url)) continue;
-      visited.add(url);
-      const p = processUrl(url).finally(() => running.delete(p));
-      running.add(p);
-    }
-    if (running.size > 0) await Promise.race([...running]);
-  }
-
-  // Final flush
-  await flushBuffer(true);
-  log(
-    `[scrape] ✓ ${pipelineState.scrapeTotal} total | ${pipelineState.scrapeNew} new/updated | queue ${enrichQueue.length}`,
+  const stmt = db.prepare(
+    "SELECT id, full_path, file_name, size, md5, sha1, sha256, crc32, torrents, so_id, magnet FROM files",
   );
 
-  // Remove stale URLs in incremental mode
-  if (mode === "incremental" && seenUrls.size > 0 && !pipelineState.cancelled) {
-    const { rows } = await query("SELECT download_url FROM games");
+  let processed = 0;
+  let lastReport = Date.now();
+  for (const r of stmt.iterate()) {
+    if (pipelineState.cancelled) break;
+    if (!r.full_path) continue;
+
+    seenPaths.add(r.full_path);
+    const { filename, group, platform } = parsePath(r.full_path);
+    const realFilename = r.file_name || filename;
+    const { base_name, tags, region } = parseFilename(realFilename);
+    const sizeBytes = Number(r.size || 0);
+
+    buffer.push({
+      game_name: base_name,
+      filename: realFilename,
+      full_path: r.full_path,
+      platform,
+      group_name: group,
+      region,
+      size: formatBytes(sizeBytes),
+      size_bytes: sizeBytes,
+      magnet: r.magnet || "",
+      torrent_file: r.torrents || "",
+      so_id: r.so_id != null ? Number(r.so_id) : null,
+      md5: r.md5 || null,
+      sha1: r.sha1 || null,
+      sha256: r.sha256 || null,
+      crc32: r.crc32 || null,
+      tags,
+    });
+    pipelineState.scrapeTotal++;
+    processed++;
+
+    if (buffer.length >= DB_BATCH_SIZE) await flushBuffer();
+
+    if (Date.now() - lastReport > 5000) {
+      log(
+        `[ingest] ${processed.toLocaleString()} / ${totalFiles.toLocaleString()} (${(
+          (processed / totalFiles) *
+          100
+        ).toFixed(1)}%)`,
+      );
+      lastReport = Date.now();
+    }
+  }
+
+  await flushBuffer(true);
+  db.close();
+
+  log(
+    `[ingest] ✓ ${pipelineState.scrapeTotal} total | ${pipelineState.scrapeNew} new/updated | queue ${enrichQueue.length}`,
+  );
+
+  if (mode === "incremental" && seenPaths.size > 0 && !pipelineState.cancelled) {
+    const { rows } = await query("SELECT full_path FROM games");
     const stale = rows
-      .map((r) => r.download_url)
-      .filter((u) => !seenUrls.has(u));
+      .map((r) => r.full_path)
+      .filter((p) => !seenPaths.has(p));
     if (stale.length) {
-      await query("DELETE FROM games WHERE download_url = ANY($1::TEXT[])", [
-        stale,
-      ]);
-      log(`[scrape] Pruned ${stale.length} stale entries.`);
+      // Postgres parameter cap — chunk the IN list.
+      const CHUNK = 5000;
+      for (let i = 0; i < stale.length; i += CHUNK) {
+        await query(
+          "DELETE FROM games WHERE full_path = ANY($1::TEXT[])",
+          [stale.slice(i, i + CHUNK)],
+        );
+      }
+      log(`[ingest] Pruned ${stale.length} stale entries.`);
     }
   }
 
   pipelineState.scrapeComplete = true;
 }
 
-// ── Main pipeline ─────────────────────────────────────────────────────────────
 async function runPipeline({ mode = "incremental" } = {}) {
   if (pipelineState.status === "running")
     throw new Error("Pipeline already running");
@@ -606,7 +623,6 @@ async function runPipeline({ mode = "incremental" } = {}) {
     log(`[igdb] WARN: ${err.message} — enrichment disabled`);
   }
 
-  // Launch enrich workers (staggered) + crawler concurrently
   const workers = igdbToken
     ? Array.from({ length: IGDB_WORKERS }, (_, i) =>
         enrichWorker(
@@ -622,13 +638,13 @@ async function runPipeline({ mode = "incremental" } = {}) {
       ];
 
   try {
-    await Promise.all([crawl({ mode, enrichQueue }), ...workers]);
+    await Promise.all([ingest({ mode, enrichQueue }), ...workers]);
     pipelineState.status = pipelineState.cancelled ? "idle" : "done";
     pipelineState.endedAt = new Date().toISOString();
     log(
       pipelineState.cancelled
         ? "⏹ Pipeline stopped by user."
-        : `✓ Done. Scraped ${pipelineState.scrapeTotal} | Enriched ${pipelineState.enriched} | Indexed ${pipelineState.indexed}`,
+        : `✓ Done. Ingested ${pipelineState.scrapeTotal} | Enriched ${pipelineState.enriched} | Indexed ${pipelineState.indexed}`,
     );
   } catch (err) {
     pipelineState.status = "error";

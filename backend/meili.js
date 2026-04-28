@@ -5,7 +5,7 @@ const INDEX_NAME = "games";
 function getMeiliClient() {
   return new MeiliSearch({
     host: process.env.MEILI_HOST || "http://localhost:7700",
-    apiKey: process.env.MEILI_MASTER_KEY || "myrient_meili_key",
+    apiKey: process.env.MEILI_MASTER_KEY || "minerva_meili_key",
   });
 }
 
@@ -13,9 +13,7 @@ async function initMeili() {
   console.log("Initializing Meilisearch index...");
   const client = getMeiliClient();
 
-  // Create index if it doesn't exist (idempotent)
   await client.createIndex(INDEX_NAME, { primaryKey: "id" }).catch((e) => {
-    // 'index_already_exists' is not a real error here
     if (e.code !== "index_already_exists") throw e;
   });
 
@@ -23,6 +21,8 @@ async function initMeili() {
 
   await index.updateSearchableAttributes([
     "game_name",
+    "filename",
+    "full_path",
     "genre",
     "developer",
     "description",
@@ -35,9 +35,14 @@ async function initMeili() {
     "tags",
     "genre",
     "is_non_game",
+    "group_name",
   ]);
 
-  await index.updateSortableAttributes(["rating", "release_date"]);
+  await index.updateSortableAttributes([
+    "rating",
+    "release_date",
+    "size_bytes",
+  ]);
 
   console.log("Meilisearch index ready.");
 }

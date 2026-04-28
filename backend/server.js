@@ -7,6 +7,7 @@ require("dotenv").config();
 const { initDb } = require("./db");
 const { initMeili } = require("./meili");
 const scheduler = require("./scheduler");
+const torrentService = require("./torrentService");
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -22,7 +23,10 @@ async function start() {
     console.error("Startup warning — DB/Meili unavailable:", err.message);
   }
 
-  // Boot scheduler (no-op if disabled or no config file)
+  torrentService.getClient().catch((err) =>
+    console.error("Torrent client startup warn:", err.message),
+  );
+
   scheduler.start();
 
   app.listen(PORT, () => {

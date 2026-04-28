@@ -3,9 +3,9 @@ const { Pool } = require("pg");
 const pool = new Pool({
   host: process.env.POSTGRES_HOST || "localhost",
   port: parseInt(process.env.POSTGRES_PORT || "5432"),
-  database: process.env.POSTGRES_DB || "myrient",
-  user: process.env.POSTGRES_USER || "myrient",
-  password: process.env.POSTGRES_PASSWORD || "myrient_secret",
+  database: process.env.POSTGRES_DB || "minerva",
+  user: process.env.POSTGRES_USER || "minerva",
+  password: process.env.POSTGRES_PASSWORD || "minerva_secret",
 });
 
 async function query(sql, params) {
@@ -19,11 +19,19 @@ async function initDb() {
       id            SERIAL PRIMARY KEY,
       game_name     TEXT NOT NULL,
       filename      TEXT NOT NULL,
+      full_path     TEXT NOT NULL UNIQUE,
       platform      TEXT NOT NULL DEFAULT '',
       group_name    TEXT NOT NULL DEFAULT '',
       region        TEXT NOT NULL DEFAULT '',
       size          TEXT NOT NULL DEFAULT '',
-      download_url  TEXT NOT NULL UNIQUE,
+      size_bytes    BIGINT NOT NULL DEFAULT 0,
+      magnet        TEXT NOT NULL DEFAULT '',
+      torrent_file  TEXT NOT NULL DEFAULT '',
+      so_id         INTEGER,
+      md5           TEXT,
+      sha1          TEXT,
+      sha256        TEXT,
+      crc32         TEXT,
       tags          TEXT[] NOT NULL DEFAULT '{}',
       description   TEXT,
       rating        NUMERIC(4,2),
@@ -35,8 +43,9 @@ async function initDb() {
       created_at    TIMESTAMPTZ NOT NULL DEFAULT NOW()
     );
 
-    CREATE INDEX IF NOT EXISTS idx_games_platform ON games (platform);
-    CREATE INDEX IF NOT EXISTS idx_games_group    ON games (group_name);
+    CREATE INDEX IF NOT EXISTS idx_games_platform  ON games (platform);
+    CREATE INDEX IF NOT EXISTS idx_games_group     ON games (group_name);
+    CREATE INDEX IF NOT EXISTS idx_games_full_path ON games (full_path);
 
     CREATE TABLE IF NOT EXISTS search_logs (
       id          BIGSERIAL PRIMARY KEY,
@@ -49,7 +58,18 @@ async function initDb() {
     CREATE INDEX IF NOT EXISTS idx_search_logs_query ON search_logs (query);
   `);
 
-  // Prune entries older than 1 year (runs on every startup — cheap enough)
+  // Drop the legacy `download_url` column if upgrading from the pre-torrent
+  // schema. Idempotent.
+  await pool.query(`
+    DO $$
+    BEGIN
+      IF EXISTS (SELECT 1 FROM information_schema.columns
+                 WHERE table_name='games' AND column_name='download_url') THEN
+        ALTER TABLE games DROP COLUMN download_url;
+      END IF;
+    END$$;
+  `);
+
   await pool.query(
     `DELETE FROM search_logs WHERE searched_at < NOW() - INTERVAL '1 year'`,
   );
@@ -63,9 +83,7 @@ async function logSearch(queryText, resultCount) {
       "INSERT INTO search_logs (query, results) VALUES ($1, $2)",
       [queryText.trim().toLowerCase(), resultCount],
     );
-  } catch (_) {
-    // Non-fatal — never crash the search route over a log write
-  }
+  } catch (_) {}
 }
 
 module.exports = { query, initDb, logSearch, pool };

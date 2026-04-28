@@ -39,7 +39,7 @@ export function Footer() {
         Known Files: {stats.total_files?.toLocaleString() ?? "—"} | With
         Metadata: {stats.files_with_metadata?.toLocaleString() ?? "—"} |
         Indexed: {stats.indexed_documents?.toLocaleString() ?? "—"} | Last
-        Crawl: {stats.last_crawl_date ?? "Never"}
+        Sync: {stats.last_crawl_date ?? "Never"}
       </p>
     </footer>
   );

@@ -1,29 +1,29 @@
 services:
-  myrient-frontend:
+  minerva-frontend:
     image: ghcr.io/myrient-search/myrient-frontend:latest
-    container_name: myrient-frontend
+    container_name: minerva-frontend
     restart: unless-stopped
     ports:
       - "80:80"
     depends_on:
-      - myrient-backend
+      - minerva-backend
     networks:
-      - myrient
+      - minerva
 
-  myrient-backend:
+  minerva-backend:
     image: ghcr.io/myrient-search/myrient-backend:latest
-    container_name: myrient-backend
+    container_name: minerva-backend
     restart: unless-stopped
     environment:
       - APPLICATION_NAME=${APPLICATION_NAME}
       - TWITCH_CLIENT_ID=${TWITCH_CLIENT_ID}
       - TWITCH_CLIENT_SECRET=${TWITCH_CLIENT_SECRET}
-      - POSTGRES_HOST=myrient-postgres
+      - POSTGRES_HOST=minerva-postgres
       - POSTGRES_PORT=5432
       - POSTGRES_DB=${POSTGRES_DB}
       - POSTGRES_USER=${POSTGRES_USER}
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
-      - MEILI_HOST=http://myrient-meilisearch:7700
+      - MEILI_HOST=http://minerva-meilisearch:7700
       - MEILI_MASTER_KEY=${MEILI_MASTER_KEY}
       - ADMIN_KEY=${ADMIN_KEY}
       - AI_ENABLED=${AI_ENABLED}
@@ -31,17 +31,28 @@ services:
       - AI_API_URL=${AI_API_URL}
       - AI_MODEL=${AI_MODEL}
       - BASE_URL=${BASE_URL}
+      - MINERVA_HOST=${MINERVA_HOST:-https://minerva-archive.org}
+      - MINERVA_CACHE_DIR=/data/minerva-cache
+      - TORRENT_IDLE_MS=${TORRENT_IDLE_MS:-5000}
+      - TORRENT_WARM_POOL_MAX=${TORRENT_WARM_POOL_MAX:-20}
+      - TORRENT_MEMORY_CAP_MB=${TORRENT_MEMORY_CAP_MB:-256}
+      - TORRENT_MAX_CONNS=${TORRENT_MAX_CONNS:-100}
+    volumes:
+      - minerva_data:/data
+    ports:
+      - "6881:6881/tcp"
+      - "6881:6881/udp"
     depends_on:
       postgres:
         condition: service_healthy
       meilisearch:
         condition: service_started
     networks:
-      - myrient
+      - minerva
 
   postgres:
     image: postgres:16-alpine
-    container_name: myrient-postgres
+    container_name: minerva-postgres
     restart: unless-stopped
     environment:
       - POSTGRES_DB=${POSTGRES_DB}
@@ -55,11 +66,11 @@ services:
       timeout: 5s
       retries: 5
     networks:
-      - myrient
+      - minerva
 
   meilisearch:
     image: getmeili/meilisearch:v1.7
-    container_name: myrient-meilisearch
+    container_name: minerva-meilisearch
     restart: unless-stopped
     environment:
       - MEILI_MASTER_KEY=${MEILI_MASTER_KEY}
@@ -67,11 +78,12 @@ services:
     volumes:
       - meili_data:/meili_data
     networks:
-      - myrient
+      - minerva
 
 volumes:
   postgres_data:
   meili_data:
+  minerva_data:
 
 networks:
-  myrient:
+  minerva:

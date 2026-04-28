@@ -8,6 +8,7 @@ import {
   Bot,
   Github,
   ChevronDown,
+  Download,
 } from "lucide-react";
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
@@ -101,36 +102,126 @@ export default function About({ appName }: AboutProps) {
             <p className="mb-4 text-sm text-zinc-300 leading-relaxed">
               A search engine for{" "}
               <a
-                href="https://myrient.erista.me/"
+                href="https://minerva-archive.org/"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="text-white hover:underline decoration-2 text-[#FFD700]"
               >
-                Myrient
+                Minerva
               </a>{" "}
-              - a service by Erista dedicated to video game preservation.
+              - the BitTorrent-powered successor to Myrient, dedicated to video
+              game preservation.
             </p>
             <p className="mb-4 text-sm text-zinc-300 leading-relaxed">
-              Myrient offers organized and publicly available video game
-              collections, keeping them from becoming lost to time.
+              Minerva mirrors the full Myrient catalog and distributes its
+              archives over BitTorrent, keeping them from becoming lost to
+              time.
             </p>
             <div className="inline-block rounded bg-red-500/10 border border-red-500 px-3 py-1 mb-4">
               <p className="text-xs font-bold text-red-400">
-                Not affiliated with Myrient/Erista!
+                Not affiliated with Minerva!
               </p>
             </div>
             <p className="text-sm text-zinc-300 leading-relaxed flex items-center justify-center gap-2">
-              If you like this project, please consider supporting Myrient:
+              If you like this project, please consider supporting Minerva:
             </p>
             <div className="flex items-center justify-center">
               <a
-                href="https://myrient.erista.me/donate/"
+                href="https://minerva-archive.org/"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="inline-flex items-center gap-1 text-[#FFD700] hover:underline font-bold"
               >
-                <Heart className="size-4" /> Donate
+                <Heart className="size-4" /> Visit Minerva
               </a>
+            </div>
+          </AccordionItem>
+
+          {/* Download modes */}
+          <AccordionItem
+            title={
+              <>
+                <Download className="size-6" /> Download Modes
+              </>
+            }
+          >
+            <div className="text-left text-sm text-zinc-300 space-y-5 leading-relaxed">
+              <p>
+                There are two ways to fetch a file. The choice lives in{" "}
+                <span className="font-bold text-white">Settings → Download Mode</span>.
+              </p>
+
+              <div className="border-2 border-emerald-500/50 bg-emerald-500/5 p-4 rounded-sm">
+                <h3 className="text-base font-black uppercase text-emerald-300 mb-2">
+                  Normal Mode (default, recommended)
+                </h3>
+                <ul className="list-disc list-outside ml-5 space-y-1.5">
+                  <li>
+                    The server joins the BitTorrent swarm on your behalf and
+                    streams the requested file back to your browser over plain
+                    HTTPS.
+                  </li>
+                  <li>
+                    Your IP is only ever exposed to this server, never to the
+                    swarm.
+                  </li>
+                  <li>
+                    Works on any browser, no extra bundle, no special peers
+                    required.
+                  </li>
+                  <li>
+                    Throughput depends on the server's connection to the swarm —
+                    fast in most cases, slower if the host is on a thin
+                    connection.
+                  </li>
+                </ul>
+              </div>
+
+              <div className="border-2 border-orange-500/50 bg-orange-500/5 p-4 rounded-sm">
+                <h3 className="text-base font-black uppercase text-orange-300 mb-2">
+                  Browser Mode (advanced, opt-in)
+                </h3>
+                <ul className="list-disc list-outside ml-5 space-y-1.5">
+                  <li>
+                    Your browser joins the BitTorrent swarm directly using
+                    WebTorrent over WebRTC.
+                  </li>
+                  <li>
+                    Can be faster <em>when</em> there are many WebRTC-capable
+                    peers — usually true for popular Linux distros, rarely for
+                    ROM swarms.
+                  </li>
+                  <li>
+                    Browsers can only talk to peers that also speak WebRTC.
+                    Most ROM swarms have very few of these, so Browser Mode
+                    often stalls. The download dialog will offer to switch
+                    back to Normal Mode after 30 s of no progress.
+                  </li>
+                  <li>
+                    <span className="text-orange-200 font-bold">
+                      Your real IP is exposed
+                    </span>{" "}
+                    to every peer it connects to. Use a reputable VPN before
+                    enabling this.
+                  </li>
+                  <li>
+                    Loads roughly 65 KB (gzipped) of WebTorrent code on first
+                    use.
+                  </li>
+                  <li>
+                    Anti-piracy enforcement is active in many countries — the
+                    settings page warns you if your detected location is on
+                    that list.
+                  </li>
+                </ul>
+              </div>
+
+              <p className="text-xs text-zinc-500 italic">
+                If you're not sure, leave it on Normal Mode. Browser Mode is
+                a curiosity / fallback for users who already understand
+                BitTorrent privacy and want to participate in the swarm
+                directly.
+              </p>
             </div>
           </AccordionItem>
 
@@ -161,8 +252,9 @@ export default function About({ appName }: AboutProps) {
                 result page.
               </li>
               <li>
-                Games are loaded directly from Myrient's public archive. Save
-                states are stored locally in the browser.
+                Games stream from a warm-and-ready BitTorrent backend that
+                pulls them out of Minerva's swarms. Save states are stored
+                locally in the browser.
               </li>
             </ul>
             <p className="text-xs text-zinc-500 italic mb-4">

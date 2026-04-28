@@ -5,7 +5,7 @@
 services:
   postgres:
     image: postgres:16-alpine
-    container_name: myrient-dev-postgres
+    container_name: minerva-dev-postgres
     restart: unless-stopped
     environment:
       - POSTGRES_DB=${POSTGRES_DB}
@@ -23,7 +23,7 @@ services:
 
   meilisearch:
     image: getmeili/meilisearch:v1.7
-    container_name: myrient-dev-meilisearch
+    container_name: minerva-dev-meilisearch
     restart: unless-stopped
     environment:
       - MEILI_MASTER_KEY=${MEILI_MASTER_KEY}

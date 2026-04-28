@@ -4,13 +4,12 @@ const { pool } = require("../db");
 const { getMeiliClient, INDEX_NAME } = require("../meili");
 const { runPipeline, stopPipeline, pipelineState } = require("../pipeline");
 const scheduler = require("../scheduler");
+const torrentService = require("../torrentService");
 
-// ── Public: is admin enabled? ─────────────────────────────────────────────────
 router.get("/ping", (req, res) => {
   res.json({ enabled: !!process.env.ADMIN_KEY });
 });
 
-// ── Auth ──────────────────────────────────────────────────────────────────────
 function requireAdmin(req, res, next) {
   const key = req.headers["x-admin-key"] || req.query.adminKey;
   if (!process.env.ADMIN_KEY)
@@ -23,7 +22,6 @@ function requireAdmin(req, res, next) {
 }
 router.use(requireAdmin);
 
-// ── Status ────────────────────────────────────────────────────────────────────
 router.get("/status", async (req, res) => {
   const result = { postgres: {}, meilisearch: {} };
   try {
@@ -52,7 +50,6 @@ router.get("/status", async (req, res) => {
   res.json(result);
 });
 
-// ── Pipeline state + queue ────────────────────────────────────────────────────
 router.get("/pipeline", (req, res) => {
   res.json({
     status: pipelineState.status,
@@ -69,7 +66,6 @@ router.get("/pipeline", (req, res) => {
   });
 });
 
-// ── Start pipeline ────────────────────────────────────────────────────────────
 router.post("/pipeline/start", (req, res) => {
   if (pipelineState.status === "running")
     return res.status(409).json({ error: "Pipeline already running" });
@@ -80,7 +76,6 @@ router.post("/pipeline/start", (req, res) => {
   );
 });
 
-// ── Stop pipeline ─────────────────────────────────────────────────────────────
 router.post("/pipeline/stop", (req, res) => {
   if (pipelineState.status !== "running")
     return res.status(409).json({ error: "Pipeline not running" });
@@ -88,7 +83,6 @@ router.post("/pipeline/stop", (req, res) => {
   res.json({ ok: true });
 });
 
-// ── Analytics ─────────────────────────────────────────────────────────────────
 router.get("/analytics", async (req, res) => {
   try {
     const [total, top, daily] = await Promise.all([
@@ -113,7 +107,6 @@ router.get("/analytics", async (req, res) => {
   }
 });
 
-// ── Scheduler ─────────────────────────────────────────────────────────────────
 router.get("/schedule", (req, res) => {
   res.json(scheduler.loadConfig());
 });
@@ -124,6 +117,15 @@ router.post("/schedule", (req, res) => {
     res.json({ ok: true, config: cfg });
   } catch (err) {
     res.status(400).json({ error: err.message });
+  }
+});
+
+router.get("/torrents", async (req, res) => {
+  try {
+    const metrics = await torrentService.getMetrics();
+    res.json(metrics);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
   }
 });
 

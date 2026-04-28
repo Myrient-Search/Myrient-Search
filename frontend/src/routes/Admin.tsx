@@ -17,7 +17,6 @@ const adminFetch = (path: string, key: string, opts?: RequestInit) =>
     },
   });
 
-// ── Types ─────────────────────────────────────────────────────────────────────
 interface PipelineState {
   status: "idle" | "running" | "done" | "error";
   mode: string | null;
@@ -51,8 +50,63 @@ interface ScheduleConfig {
   mode: "incremental" | "clean";
   expression: string;
 }
+interface SwarmTorrent {
+  infoHash: string;
+  name: string;
+  state: "active" | "warm";
+  refCount: number;
+  ready: boolean;
+  progress: number;
+  length: number;
+  downloaded: number;
+  uploaded: number;
+  ratio: number;
+  downloadSpeed: number;
+  uploadSpeed: number;
+  numPeers: number;
+  bytesInRam: number;
+  filesCount: number;
+  uptimeMs: number;
+}
+interface SwarmMetrics {
+  summary: {
+    torrentsLoaded: number;
+    activeStreams: number;
+    warmTorrents: number;
+    totalPeers: number;
+    downloadSpeed: number;
+    uploadSpeed: number;
+    totalDownloaded: number;
+    totalUploaded: number;
+    ratio: number;
+    bytesInRam: number;
+    memoryCapMB: number;
+    warmPoolMax: number;
+    idleMs: number;
+  };
+  torrents: SwarmTorrent[];
+}
 
-// ── Cron expression presets ───────────────────────────────────────────────────
+function fmtBytes(n: number): string {
+  if (!n || n <= 0) return "0 B";
+  const u = ["B", "KB", "MB", "GB", "TB"];
+  let i = 0;
+  let v = n;
+  while (v >= 1024 && i < u.length - 1) {
+    v /= 1024;
+    i++;
+  }
+  return `${v.toFixed(i === 0 ? 0 : 1)} ${u[i]}`;
+}
+function fmtUptime(ms: number): string {
+  const s = Math.floor(ms / 1000);
+  if (s < 60) return `${s}s`;
+  const m = Math.floor(s / 60);
+  if (m < 60) return `${m}m`;
+  const h = Math.floor(m / 60);
+  return `${h}h ${m % 60}m`;
+}
+
 const PRESETS = [
   { label: "Every day at midnight", value: "0 0 * * *" },
   { label: "Every 3 days at 2am", value: "0 2 */3 * *" },
@@ -147,9 +201,9 @@ export default function Admin({ appName }: AdminProps) {
     topQueries: { query: string; count: string; avg_results: string }[];
   } | null>(null);
   const [showAnalytics, setShowAnalytics] = useState(false);
+  const [swarm, setSwarm] = useState<SwarmMetrics | null>(null);
   const logRef = useRef<HTMLDivElement>(null);
 
-  // ── Ping ──────────────────────────────────────────────────────────────────────
   useEffect(() => {
     fetch(`${API}/admin/ping`)
       .then((r) => r.json().then((d) => setAdminEnabled(d.enabled ?? false)))
@@ -175,7 +229,6 @@ export default function Admin({ appName }: AdminProps) {
     if (adminEnabled && adminKey && !authed) login(adminKey);
   }, [adminEnabled, adminKey, authed, login]);
 
-  // ── Poll status + pipeline every 10s ──────────────────────────────────────────
   const fetchStatus = useCallback(async () => {
     const r = await adminFetch("/admin/status", adminKey);
     if (r.ok) setStatus(await r.json());
@@ -184,6 +237,11 @@ export default function Admin({ appName }: AdminProps) {
   const fetchPipeline = useCallback(async () => {
     const r = await adminFetch("/admin/pipeline", adminKey);
     if (r.ok) setPipeline(await r.json());
+  }, [adminKey]);
+
+  const fetchSwarm = useCallback(async () => {
+    const r = await adminFetch("/admin/torrents", adminKey);
+    if (r.ok) setSwarm(await r.json());
   }, [adminKey]);
 
   const fetchSchedule = useCallback(async () => {
@@ -209,14 +267,18 @@ export default function Admin({ appName }: AdminProps) {
     fetchStatus();
     fetchPipeline();
     fetchSchedule();
-    const interval = setInterval(() => {
+    fetchSwarm();
+    const slow = setInterval(() => {
       fetchStatus();
       fetchPipeline();
     }, 10000);
-    return () => clearInterval(interval);
-  }, [authed, fetchStatus, fetchPipeline, fetchSchedule]);
+    const fast = setInterval(fetchSwarm, 2000);
+    return () => {
+      clearInterval(slow);
+      clearInterval(fast);
+    };
+  }, [authed, fetchStatus, fetchPipeline, fetchSchedule, fetchSwarm]);
 
-  // Auto-scroll logs
   useEffect(() => {
     logRef.current?.scrollTo({
       top: logRef.current.scrollHeight,
@@ -224,7 +286,6 @@ export default function Admin({ appName }: AdminProps) {
     });
   }, [pipeline?.recentLogs?.length]);
 
-  // ── Actions ───────────────────────────────────────────────────────────────────
   const startPipeline = async (mode: "incremental" | "clean") => {
     const r = await adminFetch("/admin/pipeline/start", adminKey, {
       method: "POST",
@@ -573,6 +634,164 @@ export default function Admin({ appName }: AdminProps) {
                   <span className="text-red-400 text-xs">{scheduleError}</span>
                 )}
               </div>
+            </div>
+
+            {/* Torrent Swarm */}
+            <div className="rounded-lg border border-zinc-700 bg-zinc-800/40 p-4 flex flex-col gap-3">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <span className="font-medium text-sm">Torrent Swarm</span>
+                  <span className="text-[10px] uppercase font-mono text-emerald-400">
+                    {swarm ? "Live · 2s" : "—"}
+                  </span>
+                </div>
+                <span className="text-[10px] text-zinc-500">
+                  cap {swarm?.summary.memoryCapMB ?? "?"} MB/torrent · warm pool ≤{" "}
+                  {swarm?.summary.warmPoolMax ?? "?"}
+                </span>
+              </div>
+
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-center">
+                {[
+                  {
+                    label: "Loaded",
+                    value: swarm?.summary.torrentsLoaded ?? 0,
+                    sub: swarm
+                      ? `${swarm.summary.activeStreams} active · ${swarm.summary.warmTorrents} warm`
+                      : "",
+                  },
+                  {
+                    label: "Peers",
+                    value: swarm?.summary.totalPeers ?? 0,
+                    sub: "across all torrents",
+                  },
+                  {
+                    label: "↓ / ↑",
+                    value: swarm
+                      ? `${fmtBytes(swarm.summary.downloadSpeed)}/s`
+                      : "—",
+                    sub: swarm
+                      ? `↑ ${fmtBytes(swarm.summary.uploadSpeed)}/s · ratio ${swarm.summary.ratio.toFixed(2)}`
+                      : "",
+                  },
+                  {
+                    label: "RAM",
+                    value: swarm ? fmtBytes(swarm.summary.bytesInRam) : "—",
+                    sub: swarm
+                      ? `total ↓ ${fmtBytes(swarm.summary.totalDownloaded)}`
+                      : "",
+                  },
+                ].map((c) => (
+                  <div
+                    key={c.label}
+                    className="rounded bg-zinc-900 border border-zinc-700 py-2 px-2"
+                  >
+                    <p className="text-[10px] uppercase text-zinc-500 font-bold">
+                      {c.label}
+                    </p>
+                    <p className="text-base font-bold font-mono text-white truncate">
+                      {c.value}
+                    </p>
+                    <p className="text-[9px] text-zinc-500 mt-0.5 truncate">
+                      {c.sub}
+                    </p>
+                  </div>
+                ))}
+              </div>
+
+              {swarm && swarm.torrents.length > 0 && (
+                <div className="rounded bg-zinc-950 border border-zinc-800 overflow-hidden">
+                  <div className="overflow-x-auto max-h-72 overflow-y-auto">
+                    <table className="w-full text-[11px]">
+                      <thead className="sticky top-0 bg-zinc-950 border-b border-zinc-800">
+                        <tr>
+                          <th className="text-left p-2 text-zinc-500 font-normal">
+                            Torrent
+                          </th>
+                          <th className="text-left p-2 text-zinc-500 font-normal">
+                            State
+                          </th>
+                          <th className="text-right p-2 text-zinc-500 font-normal">
+                            Peers
+                          </th>
+                          <th className="text-right p-2 text-zinc-500 font-normal">
+                            ↓ / ↑
+                          </th>
+                          <th className="text-right p-2 text-zinc-500 font-normal">
+                            RAM
+                          </th>
+                          <th className="text-right p-2 text-zinc-500 font-normal">
+                            Up
+                          </th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {swarm.torrents
+                          .slice()
+                          .sort(
+                            (a, b) =>
+                              (b.state === "active" ? 1 : 0) -
+                                (a.state === "active" ? 1 : 0) ||
+                              b.numPeers - a.numPeers,
+                          )
+                          .map((t) => (
+                            <tr
+                              key={t.infoHash}
+                              className="border-b border-zinc-900 hover:bg-zinc-900"
+                            >
+                              <td
+                                className="p-2 text-zinc-200 font-mono truncate max-w-[260px]"
+                                title={t.name}
+                              >
+                                <span className="text-zinc-500 mr-1">
+                                  {t.infoHash.slice(0, 6)}
+                                </span>
+                                {t.name}
+                                {!t.ready && (
+                                  <span className="ml-1 text-[9px] text-yellow-500">
+                                    metadata…
+                                  </span>
+                                )}
+                              </td>
+                              <td className="p-2">
+                                {t.state === "active" ? (
+                                  <span className="inline-flex items-center gap-1 text-emerald-400">
+                                    <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                                    active{t.refCount > 1 ? ` ×${t.refCount}` : ""}
+                                  </span>
+                                ) : (
+                                  <span className="text-blue-300">warm</span>
+                                )}
+                              </td>
+                              <td className="p-2 text-right text-zinc-200 font-mono">
+                                {t.numPeers}
+                              </td>
+                              <td className="p-2 text-right text-zinc-300 font-mono whitespace-nowrap">
+                                {fmtBytes(t.downloadSpeed)}/s
+                                <span className="text-zinc-600">
+                                  {" "}
+                                  / {fmtBytes(t.uploadSpeed)}/s
+                                </span>
+                              </td>
+                              <td className="p-2 text-right text-zinc-300 font-mono">
+                                {fmtBytes(t.bytesInRam)}
+                              </td>
+                              <td className="p-2 text-right text-zinc-500 font-mono">
+                                {fmtUptime(t.uptimeMs)}
+                              </td>
+                            </tr>
+                          ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              )}
+              {swarm && swarm.torrents.length === 0 && (
+                <p className="text-xs text-zinc-500 text-center py-4">
+                  No torrents loaded yet — the pool fills up as users hit
+                  download buttons.
+                </p>
+              )}
             </div>
 
             {/* Analytics (collapsible) */}

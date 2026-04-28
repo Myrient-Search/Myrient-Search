@@ -10,7 +10,7 @@ const tools = [
     function: {
       name: "search_games",
       description:
-        "Search for retro games and ROMs in the Myrient database. Use simple, flexible text searches for best results. The search is fuzzy and will find partial matches.",
+        "Search for retro games and ROMs in the Minerva database. Use simple, flexible text searches for best results. The search is fuzzy and will find partial matches.",
       parameters: {
         type: "object",
         properties: {
@@ -146,10 +146,10 @@ async function executeToolCall(toolCall) {
 
 // ─── System Prompt ───────────────────────────────────────────────────────────
 
-const SYSTEM_PROMPT = `You are a helpful AI assistant for the Myrient Search Engine, a website that helps users find and search through retro games and ROMs.
+const SYSTEM_PROMPT = `You are a helpful AI assistant for the Minerva Search Engine, a website that helps users find and search through retro games and ROMs.
 
-About Myrient:
-- Myrient is a preservation project offering a comprehensive collection of retro games
+About Minerva:
+- Minerva is a preservation project offering a comprehensive collection of retro games (the spiritual successor to Myrient, distributing files via BitTorrent)
 - Users can search for games by name, platform, region, and genre
 - The site includes a built-in emulator for playing games in the browser
 - The search engine indexes thousands of games from various gaming systems
@@ -161,7 +161,7 @@ Your role:
 - Keep responses SHORT, CONCISE and SIMPLE
 - Present search results as simple bullet lists — NOT tables
 - Limit responses to 3-5 game recommendations to keep it readable
-- When users ask about downloading, remind them Myrient focuses on preservation
+- When users ask about downloading, remind them Minerva focuses on preservation
 
 IMPORTANT SEARCH STRATEGY:
 - When users describe a game, identify the likely game title before searching
@@ -255,7 +255,7 @@ router.post("/", async function (req, res) {
         headers: {
           "Content-Type": "application/json",
           Authorization: `Bearer ${apiKey}`,
-          "User-Agent": "Myrient-Search/2.0",
+          "User-Agent": "Minerva-Search/2.0",
         },
         body: JSON.stringify(bodyPayload),
       };
