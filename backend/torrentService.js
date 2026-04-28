@@ -52,6 +52,18 @@ async function getClient() {
     _client.on("error", (err) => {
       console.error("[torrent] client error:", err.message || err);
     });
+    // Catch errors on every torrent the moment it's added — fired
+    // synchronously inside client.add(), before metadata is parsed. This
+    // ensures any 'error' event has a listener even if our caller's per-add
+    // handler hasn't been attached yet.
+    _client.on("add", (torrent) => {
+      torrent.on("error", (err) => {
+        console.error(
+          `[torrent] ${torrent.infoHash?.slice(0, 8) || "?"} error:`,
+          err?.message || err,
+        );
+      });
+    });
     console.log(
       `[torrent] WebTorrent client initialized (RAM-only, cap=${MEMORY_CAP_MB}MB/torrent, warm pool max=${WARM_POOL_MAX})`,
     );
